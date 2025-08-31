@@ -1,4 +1,4 @@
-#| label:  Figure : Pre- and Post-Intervention Performance Outcomes
+#| label: Figure : Pre- and Post-Intervention Performance Outcomes
 library(tidyverse)
 library(lme4)
 library(lmerTest)
@@ -20,15 +20,14 @@ library(BlandAltmanLeh)
 library(patchwork)
 library(ggtext)
 library(ggrain)
+library(ggdist)
 
 data <- read_csv("ANCOVA Final Long.csv")
-
 data <- data %>%
   mutate(across(c(Group, ID, Timeline, Test), as_factor))
 
 data$Group <- data$Group %>%
   dplyr::case_match("10-sec" ~ "Group 1", "20-sec" ~ "Group 2")
-
 data$Group <- factor(data$Group, levels = c("Group 1", "Group 2"))
 
 custom_labels <- c(
@@ -40,61 +39,110 @@ custom_labels <- c(
   "CMJH" = "CMJH No Arms (cm)"
 )
 
-# Updated plot with Jitters & stat_summary for mean and SD error bars
-
-## set colour blind pallette
+## set colour blind palette
 cbp <- c("#C84E00", "#012169")
 
-pre_post_plot_final <- data %>%
-  ggplot(aes(x = Timeline, y = Value, fill = Group, color = Group)) +
-  geom_violin(
-    position = position_dodge(width = 1),
-    alpha = 0.15,
-    color = NA
+# Create custom x positions for each element
+# Pre: Violins (left) -> Boxes -> Points (right)
+# Post: Points (left) -> Boxes -> Violins (right)
+data_positioned <- data %>%
+  mutate(
+    # Define x positions for points and boxes (closer to center)
+    x_points = case_when(
+      Timeline == "Pre" & Group == "Group 1" ~ 0.7, # Pre: points on right side
+      Timeline == "Pre" & Group == "Group 2" ~ 0.7,
+      Timeline == "Post" & Group == "Group 1" ~ 2.3, # Post: points on left side
+      Timeline == "Post" & Group == "Group 2" ~ 2.3
+    ),
+    x_boxes = case_when(
+      Timeline == "Pre" & Group == "Group 1" ~ 0.15, # Pre: boxes between violins and points
+      Timeline == "Pre" & Group == "Group 2" ~ 0.45,
+      Timeline == "Post" & Group == "Group 1" ~ 2.55, # Post: boxes between points and violins
+      Timeline == "Post" & Group == "Group 2" ~ 2.85
+    ),
+    # Violin positions stay at original timeline positions
+    x_violins = case_when(
+      Timeline == "Pre" & Group == "Group 1" ~ 0, # Pre: points on right side
+      Timeline == "Pre" & Group == "Group 2" ~ 0,
+      Timeline == "Post" & Group == "Group 1" ~ 3, # Post: points on left side
+      Timeline == "Post" & Group == "Group 2" ~ 3
+    )
+  )
+
+# True split-violin raincloud plot with custom positioning
+pre_post_plot_final <- data_positioned %>%
+  ggplot(aes(x = Timeline, y = Value)) +
+
+  # Split violin plots using stat_slab - keep at original timeline positions
+  stat_slab(
+    aes(
+      x = x_violins,
+      fill = Group,
+      side = ifelse(Timeline == "Pre", "left", "right")
+    ),
+    alpha = 0.5,
+    color = NA,
+    scale = 0.8,
+    normalize = "panels"
   ) +
-  # Add mean point and SD error bars using stat_summary
-  stat_summary(
-    fun = mean,
-    geom = "point",
-    size = 4,
-    position = position_dodge(width = 1)
+
+  # Connecting lines showing individual trajectories - connect the points
+  geom_line(
+    aes(x = x_points, group = ID, color = Group),
+    alpha = 0.2,
+    linewidth = 0.8
   ) +
-  stat_summary(
-    fun.data = mean_sdl,
-    fun.args = list(mult = 1),
-    geom = "errorbar",
-    width = 0.1,
-    position = position_dodge(width = 1)
+
+  # Box plots positioned between violins and points
+  geom_boxplot(
+    aes(x = x_boxes, fill = Group, group = interaction(Timeline, Group)),
+    alpha = 0.9,
+    width = 0.3, # Narrower since they're positioned precisely
+    outlier.shape = NA,
+    color = "black",
+    linewidth = 0.5
   ) +
-  geom_rain(
-    id.long.var = "ID",
-    violin.args = list(alpha = 0, color = NA),
-    boxplot.args = list(alpha = 0, color = NA),
-    line.args = list(alpha = 0.2, linewidth = 0.5),
-    point.args = list(shape = 21, size = 4, alpha = 1, fill = "white"),
-    position = position_dodge(width = 1)
+
+  # Individual data points positioned closer to center
+  geom_point(
+    aes(x = x_points, color = Group, fill = Group),
+    alpha = 0.8,
+    size = 2.5,
+    shape = 21,
+    stroke = 0.3
   ) +
+
   facet_wrap(
     ~Test,
     scales = "free_y",
     labeller = labeller(Test = custom_labels),
     strip.position = "left"
   ) +
+
   theme_classic(base_size = 25) +
   coord_capped_cart(
     left = capped_vertical("both"),
     bottom = capped_horizontal("both")
   ) +
+
   labs(title = "", x = "", y = "") +
+
   scale_fill_manual(
     values = c(
-      "Group 1" = alpha("#C84E00", 0.2),
-      "Group 2" = alpha("#012169", 0.2)
+      "Group 1" = "#C84E00",
+      "Group 2" = "#012169"
     )
   ) +
+
   scale_colour_manual(
     values = c("Group 1" = "#C84E00", "Group 2" = "#012169")
   ) +
+
+  scale_x_continuous(
+    breaks = c(0, 3),
+    labels = c("Pre", "Post")
+  ) +
+
   theme(legend.key.size = unit(1, "cm")) +
   theme(strip.text = element_markdown(face = "bold")) +
   theme(legend.position = "top") +
@@ -103,14 +151,14 @@ pre_post_plot_final <- data %>%
     strip.background = element_blank()
   )
 
-
 pre_post_plot_final
 
+
 ggsave(
-  "Fig4_Pre_Post_2.svg",
+  "Fig4_Pre_Post.png",
   plot = pre_post_plot_final,
-  width = 50,
-  height = 35,
+  width = 65,
+  height = 40,
   units = "cm",
-  dpi = 320
+  dpi = 600
 )
