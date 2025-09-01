@@ -1,4 +1,4 @@
-#| label: Figure : Pre- and Post-Intervention Performance Outcomes
+# --- All your initial code remains the same ---
 library(tidyverse)
 library(lme4)
 library(lmerTest)
@@ -39,74 +39,101 @@ custom_labels <- c(
   "CMJH" = "CMJH No Arms (cm)"
 )
 
-## set colour blind palette
 cbp <- c("#C84E00", "#012169")
 
-# Create custom x positions for each element
-# Pre: Violins (left) -> Boxes -> Points (right)
-# Post: Points (left) -> Boxes -> Violins (right)
 data_positioned <- data %>%
   mutate(
-    # Define x positions for points and boxes (closer to center)
     x_points = case_when(
-      Timeline == "Pre" & Group == "Group 1" ~ 0.7, # Pre: points on right side
+      Timeline == "Pre" & Group == "Group 1" ~ 0.7,
       Timeline == "Pre" & Group == "Group 2" ~ 0.7,
-      Timeline == "Post" & Group == "Group 1" ~ 2.3, # Post: points on left side
+      Timeline == "Post" & Group == "Group 1" ~ 2.3,
       Timeline == "Post" & Group == "Group 2" ~ 2.3
     ),
     x_boxes = case_when(
-      Timeline == "Pre" & Group == "Group 1" ~ 0.15, # Pre: boxes between violins and points
+      Timeline == "Pre" & Group == "Group 1" ~ 0.15,
       Timeline == "Pre" & Group == "Group 2" ~ 0.45,
-      Timeline == "Post" & Group == "Group 1" ~ 2.55, # Post: boxes between points and violins
+      Timeline == "Post" & Group == "Group 1" ~ 2.55,
       Timeline == "Post" & Group == "Group 2" ~ 2.85
     ),
-    # Violin positions stay at original timeline positions
     x_violins = case_when(
-      Timeline == "Pre" & Group == "Group 1" ~ 0, # Pre: points on right side
+      Timeline == "Pre" & Group == "Group 1" ~ 0,
       Timeline == "Pre" & Group == "Group 2" ~ 0,
-      Timeline == "Post" & Group == "Group 1" ~ 3, # Post: points on left side
+      Timeline == "Post" & Group == "Group 1" ~ 3,
       Timeline == "Post" & Group == "Group 2" ~ 3
     )
   )
 
-# True split-violin raincloud plot with custom positioning
+# --- NEW CODE START ---
+# 1. Create a summary data frame with mean values
+mean_data <- data %>%
+  group_by(Test, Group, Timeline) %>%
+  summarise(mean_value = mean(Value, na.rm = TRUE)) %>%
+  ungroup() %>%
+  # Add the same x-coordinates used for the boxplots
+  mutate(
+    x_boxes = case_when(
+      Timeline == "Pre" & Group == "Group 1" ~ 0.9,
+      Timeline == "Pre" & Group == "Group 2" ~ 0.9,
+      Timeline == "Post" & Group == "Group 1" ~ 2.1,
+      Timeline == "Post" & Group == "Group 2" ~ 2.1
+    )
+  )
+# --- NEW CODE END ---
+
 pre_post_plot_final <- data_positioned %>%
   ggplot(aes(x = Timeline, y = Value)) +
 
-  # Split violin plots using stat_slab - keep at original timeline positions
   stat_slab(
     aes(
       x = x_violins,
       fill = Group,
       side = ifelse(Timeline == "Pre", "left", "right")
     ),
-    alpha = 0.5,
+    alpha = 0.4,
     color = NA,
     scale = 0.8,
     normalize = "panels"
   ) +
 
-  # Connecting lines showing individual trajectories - connect the points
   geom_line(
     aes(x = x_points, group = ID, color = Group),
     alpha = 0.2,
     linewidth = 0.8
   ) +
 
-  # Box plots positioned between violins and points
   geom_boxplot(
     aes(x = x_boxes, fill = Group, group = interaction(Timeline, Group)),
-    alpha = 0.9,
-    width = 0.3, # Narrower since they're positioned precisely
+    alpha = 0.6,
+    width = 0.3,
     outlier.shape = NA,
     color = "black",
     linewidth = 0.5
   ) +
 
-  # Individual data points positioned closer to center
+  # --- NEW CODE START ---
+  # 2. Add the line connecting the means
+  geom_line(
+    data = mean_data,
+    aes(x = x_boxes, y = mean_value, group = Group, color = Group),
+    linewidth = 1.5, # Make the line thicker to stand out,
+    alpha = 0.6
+  ) +
+
+  # 3. Add points for the means
+  geom_point(
+    data = mean_data,
+    aes(x = x_boxes, y = mean_value, fill = Group),
+    shape = 22,
+    alpha = 0.7,
+    color = "black",
+    size = 6, # Make the points larger
+    stroke = 0.8
+  ) +
+  # --- NEW CODE END ---
+
   geom_point(
     aes(x = x_points, color = Group, fill = Group),
-    alpha = 0.8,
+    alpha = 0.5,
     size = 2.5,
     shape = 21,
     stroke = 0.3
@@ -153,9 +180,8 @@ pre_post_plot_final <- data_positioned %>%
 
 pre_post_plot_final
 
-
 ggsave(
-  "Fig4_Pre_Post.png",
+  "Fig4_Pre_Post.svg",
   plot = pre_post_plot_final,
   width = 65,
   height = 40,
