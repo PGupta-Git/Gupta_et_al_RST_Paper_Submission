@@ -63,8 +63,11 @@ data_positioned <- data %>%
     )
   )
 
+<<<<<<< HEAD
 # --- NEW CODE START ---
 # 1. Create a summary data frame with mean values
+=======
+>>>>>>> 8e1e0ec (added the mean point and line in figure 4 to align it with reference image.)
 mean_data <- data %>%
   group_by(Test, Group, Timeline) %>%
   summarise(mean_value = mean(Value, na.rm = TRUE)) %>%
@@ -78,7 +81,10 @@ mean_data <- data %>%
       Timeline == "Post" & Group == "Group 2" ~ 2.1
     )
   )
+<<<<<<< HEAD
 # --- NEW CODE END ---
+=======
+>>>>>>> 8e1e0ec (added the mean point and line in figure 4 to align it with reference image.)
 
 pre_post_plot_final <- data_positioned %>%
   ggplot(aes(x = Timeline, y = Value)) +
@@ -110,6 +116,7 @@ pre_post_plot_final <- data_positioned %>%
     linewidth = 0.5
   ) +
 
+<<<<<<< HEAD
   # --- NEW CODE START ---
   # 2. Add the line connecting the means
   geom_line(
@@ -120,16 +127,31 @@ pre_post_plot_final <- data_positioned %>%
   ) +
 
   # 3. Add points for the means
+=======
+  geom_line(
+    data = mean_data,
+    aes(x = x_boxes, y = mean_value, group = Group, color = Group),
+    linewidth = 1.5,
+    alpha = 0.6
+  ) +
+
+>>>>>>> 8e1e0ec (added the mean point and line in figure 4 to align it with reference image.)
   geom_point(
     data = mean_data,
     aes(x = x_boxes, y = mean_value, fill = Group),
     shape = 22,
     alpha = 0.7,
     color = "black",
+<<<<<<< HEAD
     size = 6, # Make the points larger
     stroke = 0.8
   ) +
   # --- NEW CODE END ---
+=======
+    size = 6,
+    stroke = 0.8
+  ) +
+>>>>>>> 8e1e0ec (added the mean point and line in figure 4 to align it with reference image.)
 
   geom_point(
     aes(x = x_points, color = Group, fill = Group),
