@@ -20,6 +20,7 @@ library(ggdist)
 library(ggtext)
 
 # setwd ----
+# Please pull or clone the repo and set wd as your local directory if using RStudio. If using VSCode or Positron, then clone the project or download the zip file and open it as a folder from the file menu.
 
 # set theme
 theme_set(theme_classic())
