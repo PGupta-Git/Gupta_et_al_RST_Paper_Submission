@@ -25,20 +25,19 @@ The repository includes:
 
 The project is organized into the following directories and files:
 
-├── README.md # This file
-├── LICENSE.md # Data and code licenses
-├── data_dictionary.md # Detailed description of all variables
-│
+```
+├── README.md                    # This file
+├── LICENSE.md                   # Data and code licenses
+├── data_dictionary.md           # Detailed description of all variables
 ├── data/
-│ ├── ANCOVA Final.csv # Primary fitness test data (wide format)
-│ ├── ANCOVA Final Long.csv # Fitness test data for plotting (long format)
-│ └── rpe data.csv # Training load data (wide format)
-│
+│   ├── ANCOVA Final.csv         # Primary fitness test data (wide format)
+│   ├── ANCOVA Final Long.csv    # Fitness test data for plotting (long format)
+│   └── rpe data.csv             # Training load data (wide format)
 └── scripts/
-├── sample size for sesoi_v2.R # A priori power analysis script
-├── rpe analysis.R # Training load (RPE) analysis script
-└── ancova analysis.R # Main fitness outcomes ANCOVA script
-
+    ├── sample size for sesoi_v2.R  # A priori power analysis script
+    ├── rpe analysis.R              # Training load (RPE) analysis script
+    └── ancova analysis.R           # Main fitness outcomes ANCOVA script
+```
 
 ---
 
