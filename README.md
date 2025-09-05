@@ -31,7 +31,7 @@ The repository includes:
 
 *   **Language:** R (version 4.0 or later recommended)
 *   **Primary R Packages:**
-    *   **Data Wrangling & Plotting:** `tidyverse`, `dplyr`, `patchwork`, `lemon`, `ggeasy`, `ggrain`, `ggdist`, `ggtext`, `naniar`
+    *   **Data Wrangling & Plotting:** `tidyverse`, `dplyr`, `patchwork`, `lemon`, `ggeasy`, `ggrain`, `ggdist`, `ggtext`, `visdat`
     *   **Statistical Analysis:** `Superpower` (for power analysis), `lme4`, `estimatr`, `performance`, `easystats`, `sjPlot`, `broom.mixed`, `modelbased`, `MuMIn`, `VCA`, `mixedup`
 *   **Recommended IDE:** RStudio, VSCode with R extensions, or Positron. The scripts are designed to work well within an R project structure where the working directory is set to the project root.
 
