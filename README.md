@@ -51,8 +51,8 @@ The project is organized into the following directories and files:
 │   └── rpe data.csv             # Training load data (wide format)
 └── scripts/
     ├── sample size for sesoi.R  # A priori power analysis script
-    ├── rpe analysis.R              # Training load (RPE) analysis script
-    └── ancova analysis.R           # Main fitness outcomes ANCOVA script
+    ├── rpe analysis.R           # Training load (RPE) analysis script
+    └── ancova analysis.R        # Main fitness outcomes ANCOVA script
 ```
 
 ---
