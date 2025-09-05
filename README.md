@@ -1,4 +1,20 @@
-# Analysis of Repeated-Sprint Training Protocols on Soccer Player Performance
+# A Pragmatic, Parallel-Arm, Randomised Trial on the Effects of Two Repeated Sprint Training Protocols on Fitness Outcomes in Semi-Professional Male Soccer Players: Preliminary Report
+
+**Authors:**
+Palash Gupta<sup>1</sup>, Anthony P. Turner<sup>1</sup>, Shaun M. Phillips<sup>1</sup>, Matthew Weston<sup>1,2*</sup>
+
+**Affiliations:**
+1. Institute for Sport, Physical Education and Health Sciences, University of Edinburgh, Edinburgh, Scotland
+2. Institute of Sport, Manchester Metropolitan University, Manchester, UK
+
+*Corresponding author
+E-mail: Matthew.Weston@ed.ac.uk
+
+ORCID:
+* PG: https://orcid.org/0009-0000-0172-4009
+* AT: https://orcid.org/0000-0003-1202-6649
+* SP: https://orcid.org/0000-0002-7947-3403
+* MW: https://orcid.org/0000-0002-9531-3004 
 
 ## Project Description
 
@@ -34,7 +50,7 @@ The project is organized into the following directories and files:
 │   ├── ANCOVA Final Long.csv    # Fitness test data for plotting (long format)
 │   └── rpe data.csv             # Training load data (wide format)
 └── scripts/
-    ├── sample size for sesoi_v2.R  # A priori power analysis script
+    ├── sample size for sesoi.R  # A priori power analysis script
     ├── rpe analysis.R              # Training load (RPE) analysis script
     └── ancova analysis.R           # Main fitness outcomes ANCOVA script
 ```
@@ -61,7 +77,7 @@ For example:
     ```
 
 4.  **Run the Scripts:** Execute the R scripts located in the `/scripts` directory. A logical order is:
-    *   `sample size for sesoi_v2.R`: To understand the sample size justification. This script generates `figure 2.svg`.
+    *   `sample size for sesoi.R`: To understand the sample size justification. This script generates `figure 2.svg`.
     *   `rpe analysis.R`: To analyze the training load data. This script generates `figure 3.svg`.
     *   `ancova analysis.R`: To run the primary analysis on fitness outcomes. This script generates `figure 4.svg` and `figure 5.svg`.
 
@@ -69,7 +85,7 @@ For example:
 
 ## Relationships Between Files
 
-*   **`sample size for sesoi_v2.R`**: This is a standalone script for the *a priori* power analysis. It does not use any data from the `/data` folder but relies on parameters from published literature to inform its calculations.
+*   **`sample size for sesoi.R`**: This is a standalone script for the *a priori* power analysis. It does not use any data from the `/data` folder but relies on parameters from published literature to inform its calculations.
 
 *   **`rpe analysis.R`**: This script reads `data/rpe data.csv`, transforms it from wide to long format, and performs a linear model analysis on the training load data.
 
