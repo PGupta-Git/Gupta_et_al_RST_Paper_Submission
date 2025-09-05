@@ -8,11 +8,8 @@ library(tidyverse)
 library(dplyr)
 library(readxl)
 library(lemon)
-library(patchwork)
 library(ggeasy)
-
-# setwd ----
-# Please pull or clone the repo and set wd as your local directory if using RStudio. If using VSCode or Positron, then clone the project or download the zip file and open it as a folder from the file menu.
+library(patchwork)
 
 # set plot theme
 theme_set(theme_classic())
@@ -1345,5 +1342,6 @@ sesoi.mas
   theme(axis.title.x = element_text(vjust = -2)))
 
 ten + twenty + forty + vmax + cmj + mas
+
 #### print
-ggsave("figure 1.svg", width = 30, height = 15, units = "cm")
+ggsave("figure 2.jpeg", dpi = 300, width = 30, height = 15, units = "cm")

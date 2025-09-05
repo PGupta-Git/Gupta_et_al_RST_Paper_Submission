@@ -61,9 +61,9 @@ For example:
     ```
 
 4.  **Run the Scripts:** Execute the R scripts located in the `/scripts` directory. A logical order is:
-    *   `sample size for sesoi_v2.R`: To understand the sample size justification. This script generates `figure 1.svg`.
-    *   `rpe analysis.R`: To analyze the training load data. This script generates `figure 3.svg` and `figure 4.svg`.
-    *   `ancova analysis.R`: To run the primary analysis on fitness outcomes. This script generates `figure 5.svg` and `figure 6.svg`.
+    *   `sample size for sesoi_v2.R`: To understand the sample size justification. This script generates `figure 2.svg`.
+    *   `rpe analysis.R`: To analyze the training load data. This script generates `figure 3.svg`.
+    *   `ancova analysis.R`: To run the primary analysis on fitness outcomes. This script generates `figure 4.svg` and `figure 5.svg`.
 
 ---
 

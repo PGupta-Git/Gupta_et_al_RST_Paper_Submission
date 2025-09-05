@@ -14,10 +14,10 @@ library(sjPlot)
 library(lemon)
 library(estimatr)
 library(ggeasy)
-library(naniar)
 library(ggrain)
 library(ggdist)
 library(ggtext)
+library(visdat)
 
 # setwd ----
 # Please pull or clone the repo and set wd as your local directory if using RStudio. If using VSCode or Positron, then clone the project or download the zip file and open it as a folder from the file menu.
@@ -26,7 +26,7 @@ library(ggtext)
 theme_set(theme_classic())
 
 # Load data
-df <- read_csv("ANCOVA Final.csv")
+df <- read_csv("data/ANCOVA Final.csv")
 
 # Create change scores
 (df <- df |> mutate(Change = Post - Pre))
@@ -36,8 +36,7 @@ df$Group <- df$Group |>
   dplyr::case_match("10-sec" ~ "Group 1", "20-sec" ~ "Group 2")
 
 # Check for missing data
-n_miss(df)
-n_complete(df)
+vis_miss(df)
 
 # Descriptives ----
 df |>
@@ -51,7 +50,7 @@ df |>
   )
 
 # Raincloud plots for pre and post test data ----
-data <- read_csv("ANCOVA Final Long.csv")
+data <- read_csv("data/ANCOVA Final Long.csv")
 data <- data |>
   mutate(across(c(Group, ID, Timeline, Test), as_factor))
 
@@ -202,7 +201,7 @@ pre_post_plot_final <- data_positioned |>
 
 pre_post_plot_final
 
-ggsave("figure 5.svg", width = 40, height = 25, units = "cm")
+ggsave("figure 4.svg", dpi = 300, width = 40, height = 25, units = "cm")
 
 # 10m ancova ----
 df.10 <- df |> filter(Test == "Time_10m") # separate dataframe for 10m
@@ -603,4 +602,4 @@ check_normality(lm.mas) # fine
 # combine ancova plots ----
 (ancova.10 | ancova.20 | ancova.40) / (ancova.max | ancova.cmj | ancova.mas)
 # save
-ggsave("figure 6.svg", width = 45, height = 25, units = "cm")
+ggsave("figure 5.svg", dpi = 300, width = 45, height = 25, units = "cm")
