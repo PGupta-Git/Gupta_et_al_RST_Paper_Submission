@@ -71,7 +71,7 @@ For example:
     install.packages(c(
       "Superpower", "easystats", "tidyverse", "dplyr", "readxl", "lemon",
       "patchwork", "ggeasy", "lme4", "performance", "broom.mixed",
-      "modelbased", "sjPlot", "estimatr", "naniar", "ggrain", "ggdist",
+      "modelbased", "sjPlot", "estimatr", "visdat", "ggrain", "ggdist",
       "ggtext", "MuMIn", "VCA", "mixedup"
     ))
     ```
