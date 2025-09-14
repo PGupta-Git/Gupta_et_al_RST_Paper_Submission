@@ -1,0 +1,163 @@
+# Analysis of training data ----
+
+rm(list = ls())
+
+library(readxl)
+library(dplyr)
+library(tidyverse)
+library(ggeasy)
+library(easystats)
+library(performance)
+library(lme4)
+library(mixedup)
+library(sjPlot)
+library(broom.mixed)
+library(lemon)
+library(visdat)
+
+# setwd ----
+# Please pull or clone the repo and set wd as your local directory if using RStudio. If using VSCode or Positron, then clone the project or download the zip file and open it as a folder from the file menu.
+
+# set theme
+theme_set(theme_classic())
+
+# Load data
+rpe <- read_csv("data/rpe data.csv")
+
+# Check for missing data
+vis_miss(rpe)
+
+# Wrangling ----
+# Pivot longer
+rpe <- pivot_longer(
+  data = rpe,
+  cols = S1_Gym_L:S12_FT_B,
+  names_sep = "_",
+  names_to = c("Number", "Mode", "Measure"),
+  values_to = "Ratings"
+)
+
+# Rename variables
+rpe <- rpe |> rename("Session" = "Number")
+rpe$Group <- rpe$Group |>
+  dplyr::recode("10-sec" = "Group One", "20-sec" = "Group Two")
+rpe$Mode <- rpe$Mode |>
+  dplyr::recode(
+    "RST" = "Repeated-Sprint Training",
+    "FT" = "Soccer Training",
+    "Gym" = "Gym-Based Training"
+  )
+rpe$Measure <- rpe$Measure |> dplyr::recode("L" = "dRPE-L", "B" = "dRPE-B")
+rpe$Session <- rpe$Session |>
+  dplyr::recode(
+    "S1" = "1",
+    "S2" = "2",
+    "S3" = "3",
+    "S4" = "4",
+    "S5" = "5",
+    "S6" = "6",
+    "S7" = "7",
+    "S8" = "8",
+    "S9" = "9",
+    "S10" = "10",
+    "S11" = "11",
+    "S12" = "12"
+  )
+
+# Convert rpe a dataframe
+rpe <- as.data.frame(rpe)
+
+# Convert predictors to factors
+rpe$ID <- as.factor(rpe$ID)
+rpe$Group <- as.factor(rpe$Group)
+rpe$Mode <- as.factor(rpe$Mode)
+rpe$Measure <- as.factor(rpe$Measure)
+
+# Relevel factors
+rpe$Mode <- factor(
+  rpe$Mode,
+  levels = c(
+    "Repeated-Sprint Training",
+    "Match",
+    "Soccer Training",
+    "Gym-Based Training"
+  )
+)
+# Make session numeric
+rpe$Session <- as.numeric(rpe$Session)
+
+#### get descriptives ----
+rpe |>
+  group_by(Mode, Group) |>
+  summarise(
+    mean = round(mean(Ratings, na.rm = TRUE), 3),
+    sd = round(sd(Ratings, na.rm = TRUE), 3),
+    min = round(min(Ratings, na.rm = TRUE), 2),
+    max = round(max(Ratings, na.rm = TRUE), 2),
+    n = n()
+  )
+
+#### plot ----
+rpe |>
+  ggplot(aes(x = Session, y = Ratings, col = Mode)) +
+  geom_jitter(size = 2, height = 0.05, alpha = 0.25) +
+  geom_smooth(aes(fill = Mode), method = 'lm', se = F, linewidth = 1.5) +
+  scale_fill_manual(values = c("red", "blue", "orange", "orchid")) +
+  scale_colour_manual(values = c("red", "blue", "orange", "orchid")) +
+  scale_y_continuous(
+    limits = c(0, 100),
+    breaks = seq(from = 0, to = 100, by = 10)
+  ) +
+  scale_x_continuous(
+    limits = c(1, 12),
+    breaks = seq(from = 1, to = 12, by = 1)
+  ) +
+  labs(y = "Ratings (AU)", x = "Session Number") +
+  theme_classic() +
+  facet_wrap(~Group) +
+  easy_all_text_color("black") +
+  theme(
+    legend.text = element_text(size = 14),
+    legend.position = "top",
+    legend.title = element_text(size = 14),
+    legend.box.spacing = unit(0, "pt"),
+    strip.background.x = element_rect(fill = 'cornsilk', colour = "black"),
+    strip.text.x = element_text(colour = "black"),
+    strip.text = element_text(size = 14),
+    axis.line = element_line(linewidth = 0.5),
+    axis.text.x = element_text(angle = 0, vjust = 0.5, hjust = 0.5, size = 14),
+    axis.title.x = element_text(size = 14),
+    axis.text.y = element_text(size = 14),
+    axis.title.y = element_text(size = 14)
+  ) +
+  coord_capped_cart(
+    left = capped_vertical("both"),
+    bottom = capped_horisontal("both")
+  )
+
+# Save
+ggsave("figure 3.svg", dpi = 300, width = 30, height = 20, units = "cm")
+
+# Analysis ----
+# Mixed model
+summary(
+  mixed.rpe <- lme4::lmer(
+    Ratings ~ Group + Measure + (1 | ID) + (1 | Session) + (1 | Mode),
+    data = rpe
+  )
+)
+
+# Variance decomposition
+summarise_model(mixed.rpe)
+
+# Check residuals/errors
+fitted.mixed.rpe <- augment(mixed.rpe)
+
+# Look at relationship between fitted values and residuals ----
+ggplot(fitted.mixed.rpe, aes(x = .fitted, y = .resid)) +
+  geom_point(aes(color = Group)) +
+  geom_smooth(method = "lm") # generally OK and no clustering
+
+# Histogram
+ggplot(fitted.mixed.rpe, aes(x = .resid)) +
+  geom_histogram(binwidth = 2, color = "white") # again, fine
