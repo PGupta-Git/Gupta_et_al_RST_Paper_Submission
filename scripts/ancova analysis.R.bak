@@ -543,7 +543,7 @@ df.mas <- df |> filter(Test == "MAS") # separate dataframe for MAS
 (lm.mas <- lm(Change ~ Pre + Group, data = df.mas))
 
 # get estimated marginal means & the contrast
-(means.mas <- estimate_means(lm.cmj, by = "Group"))
+(means.mas <- estimate_means(lm.mas, by = "Group"))
 (difference.mas <- estimate_contrasts(lm.mas, contrast = "Group"))
 
 # Check residuals/errors

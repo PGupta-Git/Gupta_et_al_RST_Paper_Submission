@@ -73,3 +73,18 @@ The values within these columns represent the dRPE rating.
 *   **Valid Range:** 0-100 (based on the CR100 scale).
 
 **Note:** The `rpe analysis.R` script transforms this wide-format data into a long format with the columns `ID`, `Group`, `Session`, `Mode`, `Measure`, and `Ratings` for analysis.
+
+---
+
+## Scripts Overview
+
+The `/scripts` directory contains the following analysis scripts:
+
+| Script Name | Purpose | Input Data | Output |
+|-------------|---------|------------|--------|
+| `sample size for sesoi.R` | A priori power analysis to determine optimal sample size | Literature parameters | `figure 2.svg` |
+| `rpe analysis.R` | Training load analysis using dRPE | `rpe data.csv` | `figure 3.svg` |
+| `ancova_statistical_analysis.R` | ANCOVA models and diagnostics for fitness outcomes | `ANCOVA Final.csv` | Model objects |
+| `ancova_figures.R` | Figure generation for ANCOVA analysis | Sources `ancova_statistical_analysis.R`, reads `ANCOVA Final Long.csv` | `figure 4.svg`, `figure 5.svg` |
+
+**Note:** To generate figures for the ANCOVA analysis, run `ancova_figures.R`, which automatically sources `ancova_statistical_analysis.R` first.

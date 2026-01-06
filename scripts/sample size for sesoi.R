@@ -33,9 +33,12 @@ slope <- coeff[2]
 (sesoi.40 <- (slope * 40) + intercept)
 (sesoi.40 <- round(sesoi.40, 2))
 # maximal sprinting speed (vmax)
-# no data vmax (ms) so take proposal from Haugen & Buchheit (2016)
-# 5% is the typical training induced change in mss
-# countermovement jump
+# No direct data available for vmax SESOI, so we use the proposal from
+# Haugen & Buchheit (2016): 5% is the typical training-induced change in
+# maximal sprinting speed. The vmax SESOI is calculated later (lines 751-753).
+
+# countermovement jump (CMJ)
+# SESOI of 2.8 cm derived from Datson et al. (2021) expert consensus
 (sesoi.cmj <- 2.8)
 
 # maximal aerobic speed
@@ -302,7 +305,7 @@ sesoi.10
     y = 80,
     yend = 80,
     colour = "red",
-    size = 1.5
+    linewidth = 1.5
   ) + # 80% power
   annotate(
     "segment",
@@ -311,7 +314,7 @@ sesoi.10
     y = 0,
     yend = 80,
     colour = "red",
-    size = 1.5
+    linewidth = 1.5
   ) + # critical es
   annotate(
     "segment",
@@ -320,7 +323,7 @@ sesoi.10
     y = 0,
     yend = 60.6,
     colour = "green",
-    size = 1.5
+    linewidth = 1.5
   ) + # sesoi
   coord_capped_cart(bottom = 'both', left = 'both') +
   scale_y_continuous(
@@ -529,7 +532,7 @@ sesoi.20
     y = 80,
     yend = 80,
     colour = "red",
-    size = 1.5
+    linewidth = 1.5
   ) + # 80% power
   annotate(
     "segment",
@@ -538,7 +541,7 @@ sesoi.20
     y = 0,
     yend = 80,
     colour = "red",
-    size = 1.5
+    linewidth = 1.5
   ) + # critical es
   annotate(
     "segment",
@@ -547,7 +550,7 @@ sesoi.20
     y = 0,
     yend = 63.8,
     colour = "green",
-    size = 1.5
+    linewidth = 1.5
   ) + # sesoi
   coord_capped_cart(bottom = 'both', left = 'both') +
   scale_y_continuous(
@@ -692,7 +695,7 @@ sesoi.40
     y = 80,
     yend = 80,
     colour = "red",
-    size = 1.5
+    linewidth = 1.5
   ) + # 80% power
   annotate(
     "segment",
@@ -701,7 +704,7 @@ sesoi.40
     y = 0,
     yend = 80,
     colour = "red",
-    size = 1.5
+    linewidth = 1.5
   ) + # critical es
   annotate(
     "segment",
@@ -710,7 +713,7 @@ sesoi.40
     y = 0,
     yend = 91.1,
     colour = "green",
-    size = 1.5
+    linewidth = 1.5
   ) + # sesoi
   coord_capped_cart(bottom = 'both', left = 'both') +
   scale_y_continuous(
@@ -856,7 +859,7 @@ sesoi.vmax
     y = 80,
     yend = 80,
     colour = "red",
-    size = 1.5
+    linewidth = 1.5
   ) + # 80% power
   annotate(
     "segment",
@@ -865,7 +868,7 @@ sesoi.vmax
     y = 0,
     yend = 80,
     colour = "red",
-    size = 1.5
+    linewidth = 1.5
   ) + # critical es
   annotate(
     "segment",
@@ -874,7 +877,7 @@ sesoi.vmax
     y = 0,
     yend = 70,
     colour = "green",
-    size = 1.5
+    linewidth = 1.5
   ) + # sesoi
   coord_capped_cart(bottom = 'both', left = 'both') +
   scale_y_continuous(
@@ -1022,7 +1025,7 @@ sesoi.cmj
     y = 80,
     yend = 80,
     colour = "red",
-    size = 1.5
+    linewidth = 1.5
   ) + # 80% power
   annotate(
     "segment",
@@ -1031,7 +1034,7 @@ sesoi.cmj
     y = 0,
     yend = 80,
     colour = "red",
-    size = 1.5
+    linewidth = 1.5
   ) + # critical es
   annotate(
     "segment",
@@ -1040,7 +1043,7 @@ sesoi.cmj
     y = 0,
     yend = 16.8,
     colour = "green",
-    size = 1.5
+    linewidth = 1.5
   ) + # sesoi
   coord_capped_cart(bottom = 'both', left = 'both') +
   scale_y_continuous(
@@ -1308,7 +1311,7 @@ sesoi.mas
     y = 80,
     yend = 80,
     colour = "red",
-    size = 1.5
+    linewidth = 1.5
   ) + # 80% power
   annotate(
     "segment",
@@ -1317,7 +1320,7 @@ sesoi.mas
     y = 0,
     yend = 80,
     colour = "red",
-    size = 1.5
+    linewidth = 1.5
   ) + # critical es
   annotate(
     "segment",
@@ -1326,7 +1329,7 @@ sesoi.mas
     y = 0,
     yend = 19,
     colour = "green",
-    size = 1.5
+    linewidth = 1.5
   ) + # sesoi
   coord_capped_cart(bottom = 'both', left = 'both') +
   scale_y_continuous(
@@ -1344,4 +1347,4 @@ sesoi.mas
 ten + twenty + forty + vmax + cmj + mas
 
 #### print
-ggsave("figure 2.jpeg", dpi = 300, width = 30, height = 15, units = "cm")
+ggsave("figure 2.svg", dpi = 300, width = 30, height = 15, units = "cm")

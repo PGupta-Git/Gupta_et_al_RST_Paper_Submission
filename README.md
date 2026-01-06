@@ -42,17 +42,18 @@ The repository includes:
 The project is organized into the following directories and files:
 
 ```
-├── README.md                    # This file
-├── LICENSE.md                   # Data and code licenses
-├── data_dictionary.md           # Detailed description of all variables
+├── README.md                              # This file
+├── LICENSE.md                             # Data and code licenses
+├── data_dictionary.md                     # Detailed description of all variables
 ├── data/
-│   ├── ANCOVA Final.csv         # Primary fitness test data (wide format)
-│   ├── ANCOVA Final Long.csv    # Fitness test data for plotting (long format)
-│   └── rpe data.csv             # Training load data (wide format)
+│   ├── ANCOVA Final.csv                   # Primary fitness test data (wide format)
+│   ├── ANCOVA Final Long.csv              # Fitness test data for plotting (long format)
+│   └── rpe data.csv                       # Training load data (wide format)
 └── scripts/
-    ├── sample size for sesoi.R  # A priori power analysis script
-    ├── rpe analysis.R           # Training load (RPE) analysis script
-    └── ancova analysis.R        # Main fitness outcomes ANCOVA script
+    ├── sample size for sesoi.R            # A priori power analysis script
+    ├── rpe analysis.R                     # Training load (RPE) analysis script
+    ├── ancova_statistical_analysis.R      # ANCOVA statistical models and diagnostics
+    └── ancova_figures.R                   # ANCOVA figure generation (sources analysis script)
 ```
 
 ---
@@ -79,7 +80,10 @@ For example:
 4.  **Run the Scripts:** Execute the R scripts located in the `/scripts` directory. A logical order is:
     *   `sample size for sesoi.R`: To understand the sample size justification. This script generates `figure 2.svg`.
     *   `rpe analysis.R`: To analyze the training load data. This script generates `figure 3.svg`.
-    *   `ancova analysis.R`: To run the primary analysis on fitness outcomes. This script generates `figure 4.svg` and `figure 5.svg`.
+    *   `ancova_figures.R`: To run the primary analysis on fitness outcomes and generate figures. This script automatically sources `ancova_statistical_analysis.R` first, then generates `figure 4.svg` and `figure 5.svg`.
+    
+    Alternatively, to run only the statistical analysis without generating figures:
+    *   `ancova_statistical_analysis.R`: Runs ANCOVA models and diagnostics for all fitness outcomes.
 
 ---
 
@@ -89,7 +93,14 @@ For example:
 
 *   **`rpe analysis.R`**: This script reads `data/rpe data.csv`, transforms it from wide to long format, and performs a linear model analysis on the training load data.
 
-*   **`ancova analysis.R`**: This script is the core analysis of the study's outcomes.
-    *   It reads `data/ANCOVA Final.csv` to perform the statistical ANCOVA models.
-    *   It reads `data/ANCOVA Final Long.csv` to generate the raincloud plots for visualizing pre-post changes.
+*   **`ancova_statistical_analysis.R`**: This script contains all statistical modeling and diagnostics for the fitness outcomes.
+    *   It reads `data/ANCOVA Final.csv` to perform the ANCOVA models.
+    *   It fits models for all six outcomes: 10m sprint, 20m sprint, 40m sprint, VMax, CMJ, and MAS.
+    *   It includes assumption checks (heteroscedasticity, normality) and outlier diagnostics.
+    *   Robust standard error models are fitted where assumptions are violated.
+
+*   **`ancova_figures.R`**: This script generates all visualizations for the ANCOVA analysis.
+    *   It sources `ancova_statistical_analysis.R` to load the fitted models and data.
+    *   It reads `data/ANCOVA Final Long.csv` to generate raincloud plots (Figure 4).
+    *   It creates coefficient plots for all ANCOVA models (Figure 5).
     *   `ANCOVA Final Long.csv` is a long-format representation of the data in `ANCOVA Final.csv`.
