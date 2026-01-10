@@ -21,9 +21,10 @@ ORCID:
 This project contains the data and analysis scripts for a study investigating the effects of two different repeated-sprint training (RST) protocols on the physical performance of soccer players. The study compares a protocol with 10-second recoveries ("Group 1") to one with 20-second recoveries ("Group 2").
 
 The repository includes:
-1.  An **a priori power analysis** to determine and justify the sample size required to detect the smallest effect size of interest (SESOI) for various fitness outcomes.
-2.  An **analysis of training load**, using differential ratings of perceived exertion (dRPE) for legs and breathlessness across different training modes (RST, gym, soccer training).
-3.  The **primary ANCOVA analysis** comparing the pre-post changes in fitness test performance (sprint times, maximal velocity, countermovement jump, maximal aerobic speed) between the two training groups.
+1.  An **a priori power analysis** (`sesoi.Rmd`) to determine and justify the sample size required to detect the smallest effect size of interest (SESOI) for various fitness outcomes.
+2.  An **analysis of training load** (`dRPE mixed model.Rmd`), using differential ratings of perceived exertion (dRPE) for legs and breathlessness across different training modes (RST, gym, soccer training).
+3.  The **primary ANCOVA analysis** (`ancovas.Rmd`) comparing the pre-post changes in fitness test performance (sprint times, maximal velocity, countermovement jump, maximal aerobic speed) between the two training groups.
+4.  **Figure generation** (`figures.Rmd`) for dRPE and pre-post-test visualisations.
 
 ---
 
@@ -31,9 +32,9 @@ The repository includes:
 
 *   **Language:** R (version 4.0 or later recommended)
 *   **Primary R Packages:**
-    *   **Data Wrangling & Plotting:** `tidyverse`, `dplyr`, `patchwork`, `lemon`, `ggeasy`, `ggrain`, `ggdist`, `ggtext`, `visdat`
-    *   **Statistical Analysis:** `Superpower` (for power analysis), `lme4`, `estimatr`, `performance`, `easystats`, `sjPlot`, `broom.mixed`, `modelbased`, `MuMIn`, `VCA`, `mixedup`
-*   **Recommended IDE:** RStudio, VSCode with R extensions, or Positron. The scripts are designed to work well within an R project structure where the working directory is set to the project root.
+    *   **Data Wrangling & Plotting:** `tidyverse`, `dplyr`, `patchwork`, `lemon`, `ggeasy`, `ggdist`, `visdat`, `here`
+    *   **Statistical Analysis:** `Superpower` (for power analysis), `lme4`, `estimatr`, `performance`, `easystats`, `sjPlot`, `broom.mixed`, `mixedup`, `emmeans`
+*   **Recommended IDE:** RStudio, VSCode with R extensions, or Positron. The scripts use the `here` package for robust file path handling, so they work correctly regardless of where they are executed from within the project.
 
 ---
 
@@ -48,12 +49,24 @@ The project is organized into the following directories and files:
 ├── data/
 │   ├── ANCOVA Final.csv                   # Primary fitness test data (wide format)
 │   ├── ANCOVA Final Long.csv              # Fitness test data for plotting (long format)
-│   └── rpe data.csv                       # Training load data (wide format)
-└── scripts/
-    ├── sample size for sesoi.R            # A priori power analysis script
-    ├── rpe analysis.R                     # Training load (RPE) analysis script
-    ├── ancova_statistical_analysis.R      # ANCOVA statistical models and diagnostics
-    └── ancova_figures.R                   # ANCOVA figure generation (sources analysis script)
+│   ├── rpe data.csv                       # Training load data (wide format)
+│   ├── journal.pone.0299204.s001.csv      # Lee et al. (2024) supplementary data
+│   └── Sprinttest_Olympiatoppen.csv       # Haugen et al. (2019) sprint data
+├── scripts/
+│   ├── sesoi.Rmd                          # SESOI calculation and power analysis
+│   ├── figures.Rmd                        # dRPE and pre-post-test figures
+│   ├── dRPE mixed model.Rmd               # dRPE mixed model analysis
+│   ├── ancovas.Rmd                        # ANCOVA statistical analysis
+│   └── archive/                           # Legacy R scripts (for reference)
+│       ├── sample size for sesoi.R
+│       ├── rpe analysis.R
+│       ├── ancova_statistical_analysis.R
+│       ├── ancova_figures.R
+│       └── ancova analysis.R.bak
+└── figures/                               # Generated figure outputs (SVG format, PNG also supported)
+    ├── figure 2.svg                       # Power analysis sensitivity curves
+    ├── figure 3.svg                       # dRPE plot by session and group
+    └── figure 4.svg                       # Raincloud plots for pre-post data
 ```
 
 ---
@@ -62,45 +75,67 @@ The project is organized into the following directories and files:
 
 1.  **Clone or Download:** Clone this repository or download the zip file and extract it to a local directory.
 
-2.  **Set Working Directory:** Open the project in your IDE (e.g., RStudio by opening the `.Rproj` file if available, or by opening the folder in VSCode/Positron). The scripts assume the working directory is the root of the project folder.
+2.  **Open the Project:** Open the project in your IDE (e.g., RStudio by opening the folder, or by opening the folder in VSCode/Positron). The scripts use the `here` package to automatically detect the project root.
 
-3.  **Install Required Packages:** Run the following command in your R console to install all necessary packages for all the scripts.
-
-For example:
+3.  **Install Required Packages:** Run the following command in your R console to install all necessary packages:
 
     ```R
     install.packages(c(
-      "Superpower", "easystats", "tidyverse", "dplyr", "readxl", "lemon",
+      "Superpower", "easystats", "tidyverse", "dplyr", "readr", "lemon",
       "patchwork", "ggeasy", "lme4", "performance", "broom.mixed",
-      "modelbased", "sjPlot", "estimatr", "visdat", "ggrain", "ggdist",
-      "ggtext", "MuMIn", "VCA", "mixedup"
+      "sjPlot", "estimatr", "visdat", "ggdist", "mixedup", "emmeans", "here"
     ))
+    
+    # mixedup may need to be installed from GitHub:
+    # remotes::install_github("m-clark/mixedup")
     ```
 
-4.  **Run the Scripts:** Execute the R scripts located in the `/scripts` directory. A logical order is:
-    *   `sample size for sesoi.R`: To understand the sample size justification. This script generates `figure 2.svg`.
-    *   `rpe analysis.R`: To analyze the training load data. This script generates `figure 3.svg`.
-    *   `ancova_figures.R`: To run the primary analysis on fitness outcomes and generate figures. This script automatically sources `ancova_statistical_analysis.R` first, then generates `figure 4.svg` and `figure 5.svg`.
-    
-    Alternatively, to run only the statistical analysis without generating figures:
-    *   `ancova_statistical_analysis.R`: Runs ANCOVA models and diagnostics for all fitness outcomes.
+4.  **Run the R Markdown Scripts:** Execute the R Markdown files in the `/scripts` directory. You can render them using `rmarkdown::render()` or knit them directly in RStudio. A logical order is:
+
+    *   `sesoi.Rmd`: SESOI calculation and power analysis. Generates `figures/figure 2.svg`.
+    *   `dRPE mixed model.Rmd`: Mixed model analysis for training load (dRPE).
+    *   `figures.Rmd`: Generates visualisations. Outputs `figures/figure 3.svg` and `figures/figure 4.svg`.
+    *   `ancovas.Rmd`: ANCOVA models and diagnostics for all fitness outcomes.
+
+    **Note:** Figures are saved as SVG by default. To generate PNG output instead, change the file extension in the `ggsave()` calls from `.svg` to `.png`.
 
 ---
 
 ## Relationships Between Files
 
-*   **`sample size for sesoi.R`**: This is a standalone script for the *a priori* power analysis. It does not use any data from the `/data` folder but relies on parameters from published literature to inform its calculations.
+*   **`sesoi.Rmd`**: A priori power analysis script that:
+    *   Reads external validation data from `data/journal.pone.0299204.s001.csv` (Lee et al., 2024)
+    *   Reads sprint data from `data/Sprinttest_Olympiatoppen.csv` (Haugen et al., 2019)
+    *   Calculates SESOI values and performs sensitivity analyses
+    *   Generates `figures/figure 2.svg`
 
-*   **`rpe analysis.R`**: This script reads `data/rpe data.csv`, transforms it from wide to long format, and performs a linear model analysis on the training load data.
+*   **`dRPE mixed model.Rmd`**: Training load analysis that:
+    *   Reads `data/rpe data.csv`
+    *   Fits a linear mixed model for dRPE ratings
+    *   Performs model diagnostics and variance decomposition
 
-*   **`ancova_statistical_analysis.R`**: This script contains all statistical modeling and diagnostics for the fitness outcomes.
-    *   It reads `data/ANCOVA Final.csv` to perform the ANCOVA models.
-    *   It fits models for all six outcomes: 10m sprint, 20m sprint, 40m sprint, VMax, CMJ, and MAS.
-    *   It includes assumption checks (heteroscedasticity, normality) and outlier diagnostics.
-    *   Robust standard error models are fitted where assumptions are violated.
+*   **`figures.Rmd`**: Figure generation script that:
+    *   Reads `data/rpe data.csv` for the dRPE plot
+    *   Reads `data/ANCOVA Final Long.csv` for raincloud plots
+    *   Generates `figures/figure 3.svg` and `figures/figure 4.svg`
 
-*   **`ancova_figures.R`**: This script generates all visualizations for the ANCOVA analysis.
-    *   It sources `ancova_statistical_analysis.R` to load the fitted models and data.
-    *   It reads `data/ANCOVA Final Long.csv` to generate raincloud plots (Figure 4).
-    *   It creates coefficient plots for all ANCOVA models (Figure 5).
-    *   `ANCOVA Final Long.csv` is a long-format representation of the data in `ANCOVA Final.csv`.
+*   **`ancovas.Rmd`**: ANCOVA statistical analysis that:
+    *   Reads `data/ANCOVA Final.csv`
+    *   Fits ANCOVA models for all six outcomes (10m, 20m, 40m sprint, VMax, CMJ, MAS)
+    *   Includes assumption checks and outlier diagnostics
+    *   Uses robust standard errors where assumptions are violated
+
+---
+
+## External Data Sources
+
+The following external datasets are included in the `data/` folder:
+
+*   **`journal.pone.0299204.s001.csv`**: Supplementary data from Lee et al. (2024). [DOI: 10.1371/journal.pone.0299204](https://doi.org/10.1371/journal.pone.0299204)
+*   **`Sprinttest_Olympiatoppen.csv`**: Sprint test data from Haugen et al. (2019). [DOI: 10.18710/PJONBM](https://doi.org/10.18710/PJONBM)
+
+---
+
+## Archive
+
+The `scripts/archive/` folder contains legacy R scripts from the original analysis. These have been superseded by the R Markdown files but are retained for reference.

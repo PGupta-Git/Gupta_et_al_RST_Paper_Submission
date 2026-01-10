@@ -72,19 +72,60 @@ The values within these columns represent the dRPE rating.
 *   **Measurement Units:** Arbitrary Units (AU)
 *   **Valid Range:** 0-100 (based on the CR100 scale).
 
-**Note:** The `rpe analysis.R` script transforms this wide-format data into a long format with the columns `ID`, `Group`, `Session`, `Mode`, `Measure`, and `Ratings` for analysis.
+**Note:** The `dRPE mixed model.Rmd` script transforms this wide-format data into a long format with the columns `ID`, `Group`, `Session`, `Mode`, `Measure`, and `Ratings` for analysis.
+
+---
+
+## File: `journal.pone.0299204.s001.csv`
+
+This file contains supplementary data from Lee et al. (2024) used to validate the SESOI calculation approach. It includes sprint performance data from an intervention study.
+
+**Source:** Lee et al. (2024). [DOI: 10.1371/journal.pone.0299204](https://doi.org/10.1371/journal.pone.0299204)
+
+| Variable Name | Data Type   | Measurement Units | Description                                                                    |
+|---------------|-------------|-------------------|--------------------------------------------------------------------------------|
+| `NO`          | Numeric     | N/A               | Participant number/identifier.                                                 |
+| `Group`       | Categorical | N/A               | Intervention group assignment (1 = intervention, 2 = control).                 |
+| `5sp_Pre`     | Numeric     | Seconds (s)       | 5m sprint time at pre-test.                                                    |
+| `5sp_Post`    | Numeric     | Seconds (s)       | 5m sprint time at post-test.                                                   |
+| `10sp_Pre`    | Numeric     | Seconds (s)       | 10m sprint time at pre-test.                                                   |
+| `10sp_Post`   | Numeric     | Seconds (s)       | 10m sprint time at post-test.                                                  |
+| `20sp_Pre`    | Numeric     | Seconds (s)       | 20m sprint time at pre-test.                                                   |
+| `20sp_Post`   | Numeric     | Seconds (s)       | 20m sprint time at post-test.                                                  |
+| `30sp_Pre`    | Numeric     | Seconds (s)       | 30m sprint time at pre-test.                                                   |
+| `30sp_Post`   | Numeric     | Seconds (s)       | 30m sprint time at post-test.                                                  |
+
+---
+
+## File: `Sprinttest_Olympiatoppen.csv`
+
+This file contains sprint test data from elite Norwegian athletes, used to assess linearity across sprint distances. Originally from Haugen et al. (2019).
+
+**Source:** Haugen et al. (2019). [DOI: 10.18710/PJONBM](https://doi.org/10.18710/PJONBM)
+
+| Variable Name   | Data Type   | Measurement Units | Description                                                                    |
+|-----------------|-------------|-------------------|--------------------------------------------------------------------------------|
+| `ID`            | Numeric     | N/A               | Unique identifier for each athlete.                                            |
+| `Sport`         | Categorical | N/A               | The sport of the athlete.                                                      |
+| `Sex`           | Categorical | N/A               | Sex of the athlete (M/F).                                                      |
+| `10 m`          | Numeric     | Seconds (s)       | 10m sprint time.                                                               |
+| `20 m`          | Numeric     | Seconds (s)       | 20m sprint time.                                                               |
+| `30 m`          | Numeric     | Seconds (s)       | 30m sprint time.                                                               |
+| `40 m`          | Numeric     | Seconds (s)       | 40m sprint time.                                                               |
+
+**Note:** This dataset may contain additional columns not listed here. The variables above are the primary ones used in the analysis.
 
 ---
 
 ## Scripts Overview
 
-The `/scripts` directory contains the following analysis scripts:
+The `/scripts` directory contains R Markdown analysis files that replace the legacy R scripts:
 
 | Script Name | Purpose | Input Data | Output |
 |-------------|---------|------------|--------|
-| `sample size for sesoi.R` | A priori power analysis to determine optimal sample size | Literature parameters | `figure 2.svg` |
-| `rpe analysis.R` | Training load analysis using dRPE | `rpe data.csv` | `figure 3.svg` |
-| `ancova_statistical_analysis.R` | ANCOVA models and diagnostics for fitness outcomes | `ANCOVA Final.csv` | Model objects |
-| `ancova_figures.R` | Figure generation for ANCOVA analysis | Sources `ancova_statistical_analysis.R`, reads `ANCOVA Final Long.csv` | `figure 4.svg`, `figure 5.svg` |
+| `sesoi.Rmd` | SESOI calculation and a priori power analysis | `journal.pone.0299204.s001.csv`, `Sprinttest_Olympiatoppen.csv` | `figures/figure 2.svg` |
+| `dRPE mixed model.Rmd` | Training load analysis using mixed models for dRPE | `rpe data.csv` | Model diagnostics |
+| `figures.Rmd` | dRPE and pre-post-test figure generation | `rpe data.csv`, `ANCOVA Final Long.csv` | `figures/figure 3.svg`, `figures/figure 4.svg` |
+| `ancovas.Rmd` | ANCOVA models and diagnostics for fitness outcomes | `ANCOVA Final.csv` | Model results and diagnostics |
 
-**Note:** To generate figures for the ANCOVA analysis, run `ancova_figures.R`, which automatically sources `ancova_statistical_analysis.R` first.
+**Note:** All scripts use the `here` package for file path handling. Figures are output as SVG by default; change the file extension to `.png` in the `ggsave()` calls for PNG output. Legacy R scripts are preserved in `scripts/archive/` for reference.
