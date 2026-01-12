@@ -40,11 +40,13 @@ vis_miss(df)
 # descriptives ----
 df |>
   group_by(Test, Group) |>
-  summarise(mean = round(mean(Pre, na.rm = TRUE), 3),
-            sd = round(sd(Change, na.rm = TRUE), 3),
-            min = round(min(Change, na.rm = TRUE), 3),
-            max = round(max(Change, na.rm = TRUE), 3),
-            n = n())
+  summarise(
+    mean = round(mean(Pre, na.rm = TRUE), 3),
+    sd = round(sd(Change, na.rm = TRUE), 3),
+    min = round(min(Change, na.rm = TRUE), 3),
+    max = round(max(Change, na.rm = TRUE), 3),
+    n = n()
+  )
 ```
 
 ### 10m ancova
@@ -55,19 +57,18 @@ df.10 <- df |> filter(Test == "Time_10m") # separate dataframe for 10m
 
 # get estimated marginal means & the contrast
 (means.10m <- estimate_means(lm.10m, by = "Group"))
-(difference.10m <- estimate_contrasts(lm.10m, contrast = "Group",
-                                     length = 1))
+(difference.10m <- estimate_contrasts(lm.10m, contrast = "Group", length = 1))
 
 # check residuals/errors
 plot(density(lm.10m$residuals))
 
 # relationship between fitted values and residuals
 fitted.10 <- augment(lm.10m)
-ggplot(fitted.10, aes(x = .fitted, y = .resid)) + 
+ggplot(fitted.10, aes(x = .fitted, y = .resid)) +
   geom_point(aes(color = Group)) +
   geom_smooth(method = "lm") # generally OK and no clustering
 
-# histogram 
+# histogram
 ggplot(fitted.10, aes(x = .resid)) +
   geom_histogram(binwidth = 0.05, color = "white") # nice
 
@@ -80,6 +81,13 @@ check_normality(lm.10m) # fine
 # fine to proceed with all data as change of -0.02 is plausible
 (out.lm.10m <- check_outliers(lm.10m, method = "cook"))
 # none impacting the model
+
+# extract estimate, residual df, and se
+summary(lm.10m)
+(est.10 <- summary(lm.10m)$coeff[3])
+(se.10 <- summary(lm.10m)$coeff[6])
+(df.10 <- summary(lm.10m)$df[2])
+(p.10 <- summary(lm.10m)$coeff[12])
 ```
 
 ### 20m ancova
@@ -97,11 +105,11 @@ plot(density(lm.20m$residuals))
 
 # relationship between fitted values and residuals
 fitted.20 <- augment(lm.20m)
-ggplot(fitted.20, aes(x = .fitted, y = .resid)) + 
+ggplot(fitted.20, aes(x = .fitted, y = .resid)) +
   geom_point(aes(color = Group)) +
   geom_smooth(method = "lm") # bottom left?
 
-# histogram 
+# histogram
 ggplot(fitted.20, aes(x = .resid)) +
   geom_histogram(binwidth = 0.05, color = "white")
 
@@ -117,10 +125,17 @@ plot(out.lm.20m)
 # 22 impacting the model but barely and data plausible
 
 # rerun model with robust se estimates
-(lm.20m_r <- lm_robust(Change ~ Pre + Group, data = df.20,
-                       se_type = "stata"))
+(lm.20m_r <- lm_robust(Change ~ Pre + Group, data = df.20, se_type = "stata"))
 tidy(lm.20m, conf.int = T)
 tidy(lm.20m_r, conf.int = T) # use
+
+# extract estimate, residual df, and se
+summary(lm.20m)
+summary(lm.20m_r)
+(est.20 <- summary(lm.20m_r)$coeff[3])
+(se.20 <- summary(lm.20m_r)$coeff[6])
+(df.20 <- summary(lm.20m_r)$df[1])
+(p.20 <- summary(lm.20m_r)$coeff[12])
 ```
 
 ### 40m ancova
@@ -138,11 +153,11 @@ plot(density(lm.40m$residuals))
 
 # relationship between fitted values and residuals
 fitted.40 <- augment(lm.40m)
-ggplot(fitted.40, aes(x = .fitted, y = .resid)) + 
+ggplot(fitted.40, aes(x = .fitted, y = .resid)) +
   geom_point(aes(color = Group)) +
   geom_smooth(method = "lm") # bottom left again
 
-# histogram 
+# histogram
 ggplot(fitted.40, aes(x = .resid)) +
   geom_histogram(binwidth = 0.05, color = "white")
 
@@ -158,10 +173,17 @@ plot(out.lm.40m)
 # 22 again impacting the model but data plausible
 
 # rerun model with robust se estimates
-(lm.40m_r <- lm_robust(Change ~ Pre + Group, 
-                       data = df.40, se_type = "stata"))
+(lm.40m_r <- lm_robust(Change ~ Pre + Group, data = df.40, se_type = "stata"))
 tidy(lm.40m, conf.int = T)
 tidy(lm.40m_r, conf.int = T) # use
+
+# extract estimate, residual df, and se
+summary(lm.40m)
+summary(lm.40m_r)
+(est.40 <- summary(lm.40m_r)$coeff[3])
+(se.40 <- summary(lm.40m_r)$coeff[6])
+(df.40 <- summary(lm.40m_r)$df[1])
+(p.40 <- summary(lm.40m_r)$coeff[12])
 ```
 
 ### VMax ancova
@@ -179,11 +201,11 @@ plot(density(lm.vmax$residuals))
 
 # relationship between fitted values and residuals
 fitted.vmax <- augment(lm.vmax)
-ggplot(fitted.vmax, aes(x = .fitted, y = .resid)) + 
+ggplot(fitted.vmax, aes(x = .fitted, y = .resid)) +
   geom_point(aes(color = Group)) +
   geom_smooth(method = "lm") # fine (ish)
 
-# histogram 
+# histogram
 ggplot(fitted.vmax, aes(x = .resid)) +
   geom_histogram(binwidth = 0.05, color = "white") # fine (ish)
 
@@ -198,10 +220,21 @@ check_normality(lm.vmax) # fine
 # none detected
 
 # rerun model with robust se estimates
-(lm.vmax_r <- lm_robust(Change ~ Pre + Group, data = df.vmax, 
-                        se_type = "stata"))
+(lm.vmax_r <- lm_robust(
+  Change ~ Pre + Group,
+  data = df.vmax,
+  se_type = "stata"
+))
 tidy(lm.vmax, conf.int = T)
 tidy(lm.vmax_r, conf.int = T) # little impact
+
+# extract estimate, residual df, and se
+summary(lm.vmax)
+summary(lm.vmax_r)
+(est.vmax <- summary(lm.vmax_r)$coeff[3])
+(se.vmax <- summary(lm.vmax_r)$coeff[6])
+(df.vmax <- summary(lm.vmax_r)$df[1])
+(p.vmax <- summary(lm.vmax_r)$coeff[12])
 ```
 
 ### CMJ ancova
@@ -219,11 +252,11 @@ plot(density(lm.cmj$residuals))
 
 # relationship between fitted values and residuals
 fitted.cmj <- augment(lm.cmj)
-ggplot(fitted.cmj, aes(x = .fitted, y = .resid)) + 
+ggplot(fitted.cmj, aes(x = .fitted, y = .resid)) +
   geom_point(aes(color = Group)) +
   geom_smooth(method = "lm") # top right??
 
-# histogram 
+# histogram
 ggplot(fitted.cmj, aes(x = .resid)) +
   geom_histogram(binwidth = 0.5, color = "white") # ditto
 
@@ -238,10 +271,17 @@ check_normality(lm.cmj) # not fine
 # none detected
 
 # rerun model with robust se estimates
-(lm.cmj_r <- lm_robust(Change ~ Pre + Group, data = df.cmj
-                       , se_type = "stata"))
+(lm.cmj_r <- lm_robust(Change ~ Pre + Group, data = df.cmj, se_type = "stata"))
 tidy(lm.cmj, conf.int = T)
 tidy(lm.cmj_r, conf.int = T) # use
+
+# extract estimate, residual df, and se
+summary(lm.cmj)
+summary(lm.cmj_r)
+(est.cmj <- summary(lm.cmj_r)$coeff[3])
+(se.cmj <- summary(lm.cmj_r)$coeff[6])
+(df.cmj <- summary(lm.cmj_r)$df[1])
+(p.cmj <- summary(lm.cmj_r)$coeff[12])
 ```
 
 ### MAS ancova
@@ -259,11 +299,11 @@ plot(density(lm.mas$residuals))
 
 # Look at relationship between fitted values and residuals
 fitted.mas <- augment(lm.mas)
-ggplot(fitted.mas, aes(x = .fitted, y = .resid)) + 
+ggplot(fitted.mas, aes(x = .fitted, y = .resid)) +
   geom_point(aes(color = Group)) +
   geom_smooth(method = "lm") # top right?
 
-# Histogram 
+# Histogram
 ggplot(fitted.mas, aes(x = .resid)) +
   geom_histogram(binwidth = 0.05, color = "white") # ditto
 
@@ -276,10 +316,44 @@ check_normality(lm.mas) # fine
 # value is large but plausible given intervention and time.
 (out.lm.mas <- check_outliers(lm.mas, method = "cook"))
 # none detected
+
+# extract estimate, residual df, and se
+summary(lm.mas)
+(est.mas <- summary(lm.mas)$coeff[3])
+(se.mas <- summary(lm.mas)$coeff[6])
+(df.mas <- summary(lm.mas)$df[2])
+(p.mas <- summary(lm.mas)$coeff[12])
 ```
 
-### Bonferroni p value corrections
+### Bonferroni adjusted 95%CI CIs and p values
 
 ```{r}
-p.adjust(c(0.847, 0.268, 0.198, 0.324, 0.190, 0.321), method = "bonferroni")
+# CIs first
+# ancova estimates, residual df, and se into one vector
+(est <- c(est.10, est.20, est.40, est.vmax, est.cmj, est.mas))
+(se <- c(se.10, se.20, se.40, se.vmax, se.cmj, se.mas))
+(df <- c(df.10, df.20, df.40, df.vmax, df.cmj, df.mas))
+
+(alpha <- 0.05)
+(m <- length(est)) # 6 tests
+
+# get sd from SE so that SE = sd / sqrt(n)
+(sd <- se * sqrt(19))
+# bonferroni two-sided critical value for each test
+crit.t <- qt(1 - alpha / (2 * m), df = df)
+
+(lower.t <- est - crit.t * se)
+(upper.t <- est + crit.t * se)
+
+(ci_bonf_adj <- data.frame(
+  estimate = round(est, 2),
+  lower = round(lower.t, 2),
+  upper = round(upper.t, 2)
+))
+
+# p values
+round(
+  p.adjust(c(p.10, p.20, p.40, p.vmax, p.cmj, p.mas), method = "bonferroni"),
+  2
+)
 ```
