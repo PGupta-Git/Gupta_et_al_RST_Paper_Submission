@@ -338,7 +338,7 @@ summary(lm.mas)
 (m <- length(est)) # 6 tests
 
 # get sd from SE so that SE = sd / sqrt(n)
-(sd <- se * sqrt(19))
+(sd <- se * sqrt(19)) # residual df
 # bonferroni two-sided critical value for each test
 crit.t <- qt(1 - alpha / (2 * m), df = df)
 

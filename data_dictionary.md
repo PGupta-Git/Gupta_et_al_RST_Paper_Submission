@@ -117,15 +117,69 @@ This file contains sprint test data from elite Norwegian athletes, used to asses
 
 ---
 
+## File: `sensitivity_analysis.rds`
+
+This R data file contains intermediate results from the power analysis in `sesoi.Rmd`, used by `figures.Rmd` to generate Figure 2 (power analysis sensitivity curves).
+
+**Structure:** A named list containing the following elements:
+
+| Element Name | Data Type | Description |
+|--------------|-----------|-------------|
+| `sensitivity.10m` | Data frame | Sensitivity analysis results for 10m sprint (columns: scenario, baseline, target, power) |
+| `sensitivity.20m` | Data frame | Sensitivity analysis results for 20m sprint |
+| `sensitivity.40m` | Data frame | Sensitivity analysis results for 40m sprint |
+| `sensitivity.vmax` | Data frame | Sensitivity analysis results for VMax |
+| `sensitivity.cmj` | Data frame | Sensitivity analysis results for CMJ |
+| `sensitivity.mas` | Data frame | Sensitivity analysis results for MAS |
+| `sesoi.10` | Numeric | SESOI value for 10m sprint (seconds) |
+| `sesoi.20` | Numeric | SESOI value for 20m sprint (seconds) |
+| `sesoi.40` | Numeric | SESOI value for 40m sprint (seconds) |
+| `sesoi.vmax` | Numeric | SESOI value for VMax (m·s⁻¹) |
+| `sesoi.cmj` | Numeric | SESOI value for CMJ (cm) |
+| `sesoi.mas` | Numeric | SESOI value for MAS (m·s⁻¹) |
+| `critical.10` | Numeric | Critical effect size at 80% power for 10m sprint |
+| `critical.20` | Numeric | Critical effect size at 80% power for 20m sprint |
+| `critical.40` | Numeric | Critical effect size at 80% power for 40m sprint |
+| `critical.vmax` | Numeric | Critical effect size at 80% power for VMax |
+| `critical.cmj` | Numeric | Critical effect size at 80% power for CMJ |
+| `critical.mas` | Numeric | Critical effect size at 80% power for MAS |
+
+---
+
+## File: `rpe_contrasts.rds`
+
+This R data file contains between-group contrast results from the dRPE mixed model analysis in `dRPE mixed model.Rmd`, used by `figures.Rmd` to generate Figure 4 (RPE forest plot).
+
+**Structure:** A data frame with the following columns:
+
+| Variable Name | Data Type | Description |
+|---------------|-----------|-------------|
+| `Mode` | Factor | Training mode (Repeated-Sprint Training, Match, Soccer Training, Gym-Based Training) |
+| `contrast` | Character | The pairwise contrast (Group One - Group Two) |
+| `estimate` | Numeric | Estimated difference between groups in RPE (AU) |
+| `SE` | Numeric | Standard error of the estimate |
+| `df` | Numeric | Degrees of freedom |
+| `lower.CL.bonf` | Numeric | Lower 95% Bonferroni-adjusted confidence limit |
+| `upper.CL.bonf` | Numeric | Upper 95% Bonferroni-adjusted confidence limit |
+| `p.value.bonf` | Numeric | Bonferroni-adjusted p-value |
+
+---
+
 ## Scripts Overview
 
 The `/scripts` directory contains R Markdown analysis files that replace the legacy R scripts:
 
 | Script Name | Purpose | Input Data | Output |
 |-------------|---------|------------|--------|
-| `sesoi.Rmd` | SESOI calculation and a priori power analysis | `journal.pone.0299204.s001.csv`, `Sprinttest_Olympiatoppen.csv` | `figures/figure 2.svg` |
-| `dRPE mixed model.Rmd` | Training load analysis using mixed models for dRPE | `rpe data.csv` | Model diagnostics |
-| `figures.Rmd` | dRPE and pre-post-test figure generation | `rpe data.csv`, `ANCOVA Final Long.csv` | `figures/figure 3.svg`, `figures/figure 4.svg` |
+| `sesoi.Rmd` | SESOI calculation and a priori power analysis | `journal.pone.0299204.s001.csv`, `Sprinttest_Olympiatoppen.csv` | `sensitivity_analysis.rds` |
+| `dRPE mixed model.Rmd` | Training load analysis using mixed models for dRPE | `rpe data.csv` | `rpe_contrasts.rds`, model diagnostics |
+| `figures.Rmd` | Centralised manuscript figure generation | `sensitivity_analysis.rds`, `rpe data.csv`, `rpe_contrasts.rds`, `ANCOVA Final Long.csv` | `figures/figure 2.svg`, `figure 3.svg`, `figure 4.svg`, `figure 5.svg` |
 | `ancovas.Rmd` | ANCOVA models and diagnostics for fitness outcomes | `ANCOVA Final.csv` | Model results and diagnostics |
 
 **Note:** All scripts use the `here` package for file path handling. Figures are output as SVG by default; change the file extension to `.png` in the `ggsave()` calls for PNG output. Legacy R scripts are preserved in `scripts/archive/` for reference.
+
+**Execution Order:** To reproduce all results, run scripts in this order:
+1. `sesoi.Rmd` (generates intermediate data for Figure 2)
+2. `dRPE mixed model.Rmd` (generates intermediate data for Figure 4)
+3. `figures.Rmd` (generates all manuscript figures 2-5)
+4. `ancovas.Rmd` (ANCOVA analysis)
