@@ -1,0 +1,653 @@
+---
+title: "figures"
+output: html_document
+date: "2026-01-07"
+---
+
+### Load packages
+
+```{r}
+library(readr)
+library(dplyr)
+library(tidyverse)
+library(ggeasy)
+library(visdat)
+library(lemon)
+library(ggdist)
+library(patchwork)
+library(here)
+library(ggtext)
+
+# set plot theme
+theme_set(theme_classic(base_size = 18, base_family = "sans"))
+```
+
+### Power analysis sensitivity curves (Figure 2)
+
+Load intermediate results from `sesoi.Rmd` and create the combined sensitivity plot.
+
+```{r}
+# load sensitivity analysis data
+sens <- readRDS(here("data", "sensitivity_analysis.rds"))
+
+# 10 m sprint sensitivity curve
+ten <- sens$sensitivity.10m |>
+  ggplot(aes(target, power)) +
+  annotate(
+    "segment",
+    x = -0.2,
+    xend = -0.18,
+    y = 80,
+    yend = 80,
+    colour = "red",
+    size = 1.5,
+    lineend = "round"
+  ) +
+  annotate(
+    "segment",
+    x = -0.18,
+    xend = -0.18,
+    y = 0,
+    yend = 80,
+    colour = "red",
+    size = 1.5,
+    lineend = "round"
+  ) +
+  annotate(
+    "segment",
+    x = -0.11,
+    xend = -0.11,
+    y = 0,
+    yend = 30.8,
+    colour = "green",
+    size = 1.5,
+    lineend = "round"
+  ) +
+  geom_line(linewidth = 2, lineend = "round") +
+  coord_capped_cart(bottom = 'both', left = 'both') +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 10)) +
+  scale_x_continuous(limits = c(-0.2, 0.0), breaks = seq(-0.2, 0, 0.05)) +
+  labs(x = "10 m Sprint Target Change (s)", y = "Power (%)") +
+  easy_all_text_colour("black") +
+  theme(axis.title.x = element_text(vjust = -2)) +
+  theme(panel.border = element_blank(), axis.line = element_line())
+
+# 20 m sprint sensitivity curve
+twenty <- sens$sensitivity.20m |>
+  ggplot(aes(target, power)) +
+  annotate(
+    "segment",
+    x = -0.3,
+    xend = -0.25,
+    y = 80,
+    yend = 79.9,
+    colour = "red",
+    size = 1.5,
+    lineend = "round"
+  ) +
+  annotate(
+    "segment",
+    x = -0.25,
+    xend = -0.25,
+    y = 0,
+    yend = 79.9,
+    colour = "red",
+    size = 1.5,
+    lineend = "round"
+  ) +
+  annotate(
+    "segment",
+    x = -0.16,
+    xend = -0.16,
+    y = 0,
+    yend = 33.8,
+    colour = "green",
+    size = 1.5,
+    lineend = "round"
+  ) +
+  geom_line(linewidth = 2, lineend = "round") +
+  coord_capped_cart(bottom = 'both', left = 'both') +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 10)) +
+  scale_x_continuous(limits = c(-0.3, 0.0), breaks = seq(-0.3, 0.0, 0.05)) +
+  labs(x = "20 m Sprint Target Change (s)", y = "Power (%)") +
+  easy_all_text_colour("black") +
+  theme(axis.title.x = element_text(vjust = -2))
+
+# 40 m sprint sensitivity curve
+forty <- sens$sensitivity.40m |>
+  ggplot(aes(target, power)) +
+  annotate(
+    "segment",
+    x = -0.40,
+    xend = -0.29,
+    y = 80,
+    yend = 80,
+    colour = "red",
+    size = 1.5,
+    lineend = "round"
+  ) +
+  annotate(
+    "segment",
+    x = -0.29,
+    xend = -0.29,
+    y = 0,
+    yend = 80,
+    colour = "red",
+    size = 1.5,
+    lineend = "round"
+  ) +
+  annotate(
+    "segment",
+    x = -0.26,
+    xend = -0.26,
+    y = 0,
+    yend = 70.3,
+    colour = "green",
+    size = 1.5,
+    lineend = "round"
+  ) +
+  geom_line(linewidth = 2, lineend = "round") +
+  coord_capped_cart(bottom = 'both', left = 'both') +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 10)) +
+  scale_x_continuous(limits = c(-0.4, -0.05), breaks = seq(-0.4, -0.05, 0.05)) +
+  labs(x = "40 m Sprint Target Change (s)", y = "Power (%)") +
+  easy_all_text_colour("black") +
+  theme(axis.title.x = element_text(vjust = -3))
+
+# CMJ sensitivity curve
+cmj <- sens$sensitivity.cmj |>
+  ggplot(aes(target, power)) +
+  annotate(
+    "segment",
+    x = 0,
+    xend = 10.3,
+    y = 80,
+    yend = 80,
+    colour = "red",
+    size = 1.5,
+    lineend = "round"
+  ) +
+  annotate(
+    "segment",
+    x = 10.3,
+    xend = 10.3,
+    y = 0,
+    yend = 80,
+    colour = "red",
+    size = 1.5,
+    lineend = "round"
+  ) +
+  annotate(
+    "segment",
+    x = 2.8,
+    xend = 2.8,
+    y = 0,
+    yend = 2.8,
+    colour = "green",
+    size = 1.5,
+    lineend = "round"
+  ) +
+  geom_line(linewidth = 2, lineend = "round") +
+  coord_capped_cart(bottom = 'both', left = 'both') +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 10)) +
+  scale_x_continuous(limits = c(0.0, 15.0), breaks = seq(0.0, 15.0, 1.0)) +
+  labs(x = "CMJ Target Change (cm)", y = "Power (%)") +
+  easy_all_text_colour("black") +
+  theme(axis.title.x = element_text(vjust = -3))
+
+# VMax sensitivity curve
+vmax <- sens$sensitivity.vmax |>
+  ggplot(aes(target, power)) +
+  annotate(
+    "segment",
+    x = 0.2,
+    xend = 0.675,
+    y = 80,
+    yend = 80,
+    colour = "red",
+    size = 1.5,
+    lineend = "round"
+  ) +
+  annotate(
+    "segment",
+    x = 0.675,
+    xend = 0.675,
+    y = 0,
+    yend = 80,
+    colour = "red",
+    size = 1.5,
+    lineend = "round"
+  ) +
+  annotate(
+    "segment",
+    x = 0.46,
+    xend = 0.46,
+    y = 0,
+    yend = 40,
+    colour = "green",
+    size = 1.5,
+    lineend = "round"
+  ) +
+  geom_line(linewidth = 2, lineend = "round") +
+  coord_capped_cart(bottom = 'both', left = 'both') +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 10)) +
+  scale_x_continuous(limits = c(0.2, 1.0), breaks = seq(0.2, 1.0, 0.1)) +
+  labs(
+    y = "Power (%)",
+    x = expression(
+      "VMax Target Change (m·s"^{
+        -1
+      } *
+        ")"
+    )
+  ) +
+  easy_all_text_colour("black") +
+  theme(axis.title.x = element_text(vjust = -2))
+
+# MAS sensitivity curve
+mas <- sens$sensitivity.mas |>
+  ggplot(aes(target, power)) +
+  annotate(
+    "segment",
+    x = 0.05,
+    xend = 0.44,
+    y = 80,
+    yend = 80,
+    colour = "red",
+    size = 1.5,
+    lineend = "round"
+  ) +
+  annotate(
+    "segment",
+    x = 0.44,
+    xend = 0.44,
+    y = 0,
+    yend = 80,
+    colour = "red",
+    size = 1.5,
+    lineend = "round"
+  ) +
+  annotate(
+    "segment",
+    x = 0.13,
+    xend = 0.13,
+    y = 0,
+    yend = 5.2,
+    colour = "green",
+    size = 1.5,
+    lineend = "round"
+  ) +
+  geom_line(linewidth = 2, lineend = "round") +
+  coord_capped_cart(bottom = 'both', left = 'both') +
+  scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 10)) +
+  scale_x_continuous(limits = c(0.05, 0.70), breaks = seq(0.05, 0.70, 0.1)) +
+  labs(
+    y = "Power (%)",
+    x = expression(
+      "MAS Target Change (m·s"^{
+        -1
+      } *
+        ")"
+    )
+  ) +
+  easy_all_text_colour("black") +
+  theme(axis.title.x = element_text(vjust = -2))
+
+# combine plots with increased spacing between rows
+combined_plot <- (ten | twenty) /
+  plot_spacer() /
+  (forty | cmj) /
+  plot_spacer() /
+  (vmax | mas) &
+  theme(text = element_text(size = 20))
+
+# adjust layout to minimize spacer heights
+combined_plot + plot_layout(heights = c(1, 0.1, 1, 0.1, 1))
+
+# Save figure
+# Output format: SVG (scalable vector graphics). For PNG output, change extension to .png
+ggsave(
+  here("figures", "figure 2.svg"),
+  dpi = 300,
+  width = 30,
+  height = 35,
+  units = "cm"
+)
+```
+
+### RPE session plot (Figure 3)
+
+#### Load data, check for missing values, and wrangle.
+
+```{r}
+rpe <- read_csv(here("data", "rpe data.csv"))
+
+# check for missing data
+vis_miss(rpe)
+
+# pivot longer
+rpe <- pivot_longer(
+  data = rpe,
+  cols = S1_Gym_L:S12_FT_B,
+  names_sep = "_",
+  names_to = c("Number", "Mode", "Measure"),
+  values_to = "Ratings"
+)
+
+# rename variables
+rpe <- rpe |> rename("Session" = "Number")
+rpe$Group <- rpe$Group |>
+  dplyr::recode("10-sec" = "Group 1", "20-sec" = "Group 2")
+rpe$Mode <- rpe$Mode |>
+  dplyr::recode(
+    "RST" = "Repeated-Sprint Training",
+    "FT" = "Soccer Training",
+    "Gym" = "Gym-Based Training"
+  )
+rpe$Measure <- rpe$Measure |> dplyr::recode("L" = "dRPE-L", "B" = "dRPE-B")
+rpe$Session <- rpe$Session |>
+  dplyr::recode(
+    "S1" = "1",
+    "S2" = "2",
+    "S3" = "3",
+    "S4" = "4",
+    "S5" = "5",
+    "S6" = "6",
+    "S7" = "7",
+    "S8" = "8",
+    "S9" = "9",
+    "S10" = "10",
+    "S11" = "11",
+    "S12" = "12"
+  )
+
+# convert rpe a dataframe
+rpe <- as.data.frame(rpe)
+
+# convert predictors to factors
+rpe$ID <- as.factor(rpe$ID)
+rpe$Group <- as.factor(rpe$Group)
+rpe$Mode <- as.factor(rpe$Mode)
+rpe$Measure <- as.factor(rpe$Measure)
+
+# relevel factors
+rpe$Mode <- factor(
+  rpe$Mode,
+  levels = c(
+    "Repeated-Sprint Training",
+    "Match",
+    "Soccer Training",
+    "Gym-Based Training"
+  )
+)
+# Make session numeric
+rpe$Session <- as.numeric(rpe$Session)
+```
+
+#### Plot and save
+
+```{r}
+rpe |>
+  ggplot(aes(x = Session, y = Ratings, col = Mode)) +
+  geom_jitter(size = 2, height = 0.05, alpha = 0.25) +
+  geom_smooth(aes(fill = Mode), method = 'lm', se = F, linewidth = 1.5) +
+  scale_fill_manual(values = c("red", "blue", "orange", "orchid")) +
+  scale_colour_manual(values = c("red", "blue", "orange", "orchid")) +
+  scale_y_continuous(
+    limits = c(0, 100),
+    breaks = seq(from = 0, to = 100, by = 10)
+  ) +
+  scale_x_continuous(
+    limits = c(1, 12),
+    breaks = seq(from = 1, to = 12, by = 1)
+  ) +
+  labs(y = "Ratings (AU)", x = "Session Number") +
+  theme_classic() +
+  facet_wrap(~Group) +
+  easy_all_text_color("black") +
+  theme(
+    legend.text = element_text(size = 18),
+    legend.position = "top",
+    legend.title = element_text(size = 18),
+    legend.box.spacing = unit(0, "pt"),
+    strip.background.x = element_rect(fill = 'cornsilk', colour = "black"),
+    strip.text.x = element_text(colour = "black"),
+    strip.text = element_text(size = 18),
+    axis.line = element_line(linewidth = 0.5),
+    axis.text.x = element_text(angle = 0, vjust = 0.5, hjust = 0.5, size = 18),
+    axis.title.x = element_text(size = 18),
+    axis.text.y = element_text(size = 18),
+    axis.title.y = element_text(size = 18)
+  ) +
+  coord_capped_cart(
+    left = capped_vertical("both"),
+    bottom = capped_horisontal("both")
+  )
+
+# Save figure
+# Output format: SVG (scalable vector graphics). For PNG output, change extension to .png
+ggsave(
+  here("figures", "figure 3.svg"),
+  dpi = 300,
+  width = 30,
+  height = 15,
+  units = "cm"
+)
+```
+
+### RPE forest plot (Figure 4)
+
+Load between-group contrast results from `dRPE mixed model.Rmd` and create the forest plot.
+
+```{r}
+# load RPE contrast data
+rpe_contrasts <- readRDS(here("data", "rpe_contrasts.rds"))
+
+# create forest plot of between-group differences
+ggplot(rpe_contrasts, aes(x = estimate, y = Mode)) +
+  geom_errorbarh(
+    aes(xmin = lower.CL.bonf, xmax = upper.CL.bonf),
+    height = 0.2,
+    color = "black",
+    width = 0
+  ) +
+  geom_point(size = 3, color = "midnightblue") +
+  labs(x = "Between-Group Difference in RPE (AU)", y = "") +
+  coord_capped_cart(bottom = 'both', left = 'both') +
+  easy_all_text_size(12) +
+  scale_x_continuous(
+    limits = c(-15, 15),
+    breaks = seq(from = -15, to = 15, by = 3)
+  ) +
+  geom_segment(aes(x = 0, xend = 0, y = 0.9, yend = 4.1), linetype = "dashed") +
+  annotate(
+    "rect",
+    xmin = -8,
+    xmax = 8,
+    ymin = 0.9,
+    ymax = 4.1,
+    alpha = .1,
+    fill = "deepskyblue"
+  )
+
+# Save figure
+# Output format: SVG (scalable vector graphics). For PNG output, change extension to .png
+ggsave(
+  here("figures", "figure 4.svg"),
+  dpi = 300,
+  width = 20,
+  height = 10,
+  units = "cm"
+)
+```
+
+### Raincloud plots (Figure 5)
+
+#### Load data
+
+```{r}
+data <- read_csv(here("data", "ANCOVA Final Long.csv"))
+data <- data |>
+  mutate(across(c(Group, ID, Timeline, Test), as_factor))
+
+data$Group <- data$Group |>
+  dplyr::case_match("10-sec" ~ "Group 1", "20-sec" ~ "Group 2")
+data$Group <- factor(data$Group, levels = c("Group 1", "Group 2"))
+```
+
+#### Plot and save
+
+```{r}
+custom_labels <- c(
+  "Time_10m" = "10 m Sprint Time (s)",
+  "Time_20m" = "20 m Sprint Time (s)",
+  "Time_40m" = "40 m Sprint Time (s)",
+  "Max_Velocity" = "VMax (m·s⁻¹)",
+  "MAS" = "MAS (m·s⁻¹)",
+  "CMJH" = "CMJ (cm)"
+)
+
+cbp <- c("#C84E00", "#012169")
+
+data_positioned <- data |>
+  mutate(
+    x_points = case_when(
+      Timeline == "Pre" & Group == "Group 1" ~ 0.7,
+      Timeline == "Pre" & Group == "Group 2" ~ 0.7,
+      Timeline == "Post" & Group == "Group 1" ~ 2.3,
+      Timeline == "Post" & Group == "Group 2" ~ 2.3
+    ),
+    x_boxes = case_when(
+      Timeline == "Pre" & Group == "Group 1" ~ 0.15,
+      Timeline == "Pre" & Group == "Group 2" ~ 0.45,
+      Timeline == "Post" & Group == "Group 1" ~ 2.55,
+      Timeline == "Post" & Group == "Group 2" ~ 2.85
+    ),
+    x_violins = case_when(
+      Timeline == "Pre" & Group == "Group 1" ~ 0,
+      Timeline == "Pre" & Group == "Group 2" ~ 0,
+      Timeline == "Post" & Group == "Group 1" ~ 3,
+      Timeline == "Post" & Group == "Group 2" ~ 3
+    )
+  )
+
+mean_data <- data |>
+  group_by(Test, Group, Timeline) |>
+  summarise(mean_value = mean(Value, na.rm = TRUE)) |>
+  ungroup() %>%
+  # Add the same x-coordinates used for the boxplots
+  mutate(
+    x_boxes = case_when(
+      Timeline == "Pre" & Group == "Group 1" ~ 0.9,
+      Timeline == "Pre" & Group == "Group 2" ~ 0.9,
+      Timeline == "Post" & Group == "Group 1" ~ 2.1,
+      Timeline == "Post" & Group == "Group 2" ~ 2.1
+    )
+  )
+
+pre_post_plot_final <- data_positioned |>
+  ggplot(aes(x = Timeline, y = Value)) +
+
+  stat_slab(
+    aes(
+      x = x_violins,
+      fill = Group,
+      side = ifelse(Timeline == "Pre", "left", "right")
+    ),
+    alpha = 0.4,
+    color = NA,
+    scale = 0.8,
+    normalize = "panels"
+  ) +
+
+  geom_line(
+    aes(x = x_points, group = ID, color = Group),
+    alpha = 0.2,
+    linewidth = 0.8
+  ) +
+
+  geom_boxplot(
+    aes(x = x_boxes, fill = Group, group = interaction(Timeline, Group)),
+    alpha = 0.6,
+    width = 0.3,
+    outlier.shape = NA,
+    color = "black",
+    linewidth = 0.5
+  ) +
+
+  geom_line(
+    data = mean_data,
+    aes(x = x_boxes, y = mean_value, group = Group, color = Group),
+    linewidth = 1.5,
+    alpha = 0.6
+  ) +
+
+  geom_point(
+    data = mean_data,
+    aes(x = x_boxes, y = mean_value, fill = Group),
+    shape = 22,
+    alpha = 0.7,
+    color = "black",
+    size = 6,
+    stroke = 0.8
+  ) +
+
+  geom_point(
+    aes(x = x_points, color = Group, fill = Group),
+    alpha = 0.5,
+    size = 2.5,
+    shape = 21,
+    stroke = 0.3
+  ) +
+
+  facet_wrap(
+    ~Test,
+    scales = "free_y",
+    labeller = labeller(Test = custom_labels),
+    strip.position = "left"
+  ) +
+
+  theme_classic(base_size = 25) +
+  coord_capped_cart(
+    left = capped_vertical("both"),
+    bottom = capped_horizontal("both")
+  ) +
+
+  labs(title = "", x = "", y = "") +
+
+  scale_fill_manual(
+    values = c(
+      "Group 1" = "#C84E00",
+      "Group 2" = "#012169"
+    )
+  ) +
+
+  scale_colour_manual(
+    values = c("Group 1" = "#C84E00", "Group 2" = "#012169")
+  ) +
+
+  scale_x_continuous(
+    breaks = c(0, 3),
+    labels = c("Pre", "Post")
+  ) +
+
+  theme(legend.key.size = unit(1, "cm")) +
+  theme(strip.text = element_text(face = "plain")) +
+  theme(legend.position = "top") +
+  theme(
+    strip.placement = "outside",
+    strip.background = element_blank()
+  )
+
+pre_post_plot_final
+
+# Save figure
+# Output format: SVG (scalable vector graphics). For PNG output, change extension to .png
+ggsave(
+  here("figures", "figure 5.svg"),
+  dpi = 300,
+  width = 40,
+  height = 25,
+  units = "cm"
+)
+```

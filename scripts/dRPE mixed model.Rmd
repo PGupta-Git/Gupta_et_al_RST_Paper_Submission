@@ -1,0 +1,171 @@
+---
+title: "dRPE mixed model"
+output: html_document
+date: "2026-01-07"
+---
+
+## Load packages
+
+```{r}
+library(readr)
+library(dplyr)
+library(tidyverse)
+library(visdat)
+library(easystats)
+library(performance)
+library(lme4)
+library(emmeans)
+library(mixedup)
+library(broom.mixed)
+library(stats)
+library(here)
+
+# set theme
+theme_set(theme_classic())
+```
+
+### Data import and wrangling
+
+```{r}
+# load data
+rpe <- read_csv(here("data", "rpe data.csv"))
+
+# check for missing data
+vis_miss(rpe)
+
+# wrangling
+# pivot longer
+rpe <- pivot_longer(
+  data = rpe,
+  cols = S1_Gym_L:S12_FT_B,
+  names_sep = "_",
+  names_to = c("Number", "Mode", "Measure"),
+  values_to = "Ratings"
+)
+
+# rename variables
+rpe <- rpe |> rename("Session" = "Number")
+rpe$Group <- rpe$Group |>
+  dplyr::recode("10-sec" = "Group One", "20-sec" = "Group Two")
+rpe$Mode <- rpe$Mode |>
+  dplyr::recode(
+    "RST" = "Repeated-Sprint Training",
+    "FT" = "Soccer Training",
+    "Gym" = "Gym-Based Training"
+  )
+rpe$Measure <- rpe$Measure |> dplyr::recode("L" = "dRPE-L", "B" = "dRPE-B")
+rpe$Session <- rpe$Session |>
+  dplyr::recode(
+    "S1" = "1",
+    "S2" = "2",
+    "S3" = "3",
+    "S4" = "4",
+    "S5" = "5",
+    "S6" = "6",
+    "S7" = "7",
+    "S8" = "8",
+    "S9" = "9",
+    "S10" = "10",
+    "S11" = "11",
+    "S12" = "12"
+  )
+
+# convert rpe a dataframe
+rpe <- as.data.frame(rpe)
+
+# convert predictors to factors
+rpe$ID <- as.factor(rpe$ID)
+rpe$Group <- as.factor(rpe$Group)
+rpe$Mode <- as.factor(rpe$Mode)
+rpe$Measure <- as.factor(rpe$Measure)
+
+# relevel factors
+rpe$Mode <- factor(
+  rpe$Mode,
+  levels = c(
+    "Repeated-Sprint Training",
+    "Match",
+    "Soccer Training",
+    "Gym-Based Training"
+  )
+)
+# Make session numeric
+rpe$Session <- as.numeric(rpe$Session)
+```
+
+### Descriptives
+
+```{r}
+#### get descriptives ----
+rpe |>
+  group_by(Mode, Group) |>
+  summarise(
+    mean = round(mean(Ratings, na.rm = TRUE), 3),
+    sd = round(sd(Ratings, na.rm = TRUE), 3),
+    min = round(min(Ratings, na.rm = TRUE), 2),
+    max = round(max(Ratings, na.rm = TRUE), 2),
+    n = n()
+  )
+```
+
+### Mixed model
+
+```{r}
+summary(
+  mixed.rpe <- lmer(
+    Ratings ~ Group * Mode + Measure + (1 | ID) + (1 | Session),
+    data = rpe
+  )
+)
+
+# variance decomposition
+summarise_model(mixed.rpe)
+
+# model diagnostics
+# check residuals/errors
+check_model(mixed.rpe)
+
+# relationship between fitted values and residuals ----
+fitted.mixed.rpe <- augment(mixed.rpe)
+ggplot(fitted.mixed.rpe, aes(x = .fitted, y = .resid)) +
+  geom_point(aes(color = Group)) +
+  geom_smooth(method = "lm") # generally OK and no clustering
+
+# histogram
+ggplot(fitted.mixed.rpe, aes(x = .resid)) +
+  geom_histogram(binwidth = 1, color = "white") # again, fine
+
+# get estimated marginal means and pairwise contrasts
+(est <- emmeans(mixed.rpe, ~ Group | Mode))
+(pairs <- summary(contrast(est, "pairwise"), infer = TRUE))
+
+# manual bonferroni CI adjustment for these 4 comparisons
+(df <- pairs$df) # set df
+(m <- nrow(pairs)) # set number of contrasts
+(alpha <- 0.05) # set alpha
+(crit <- qt(1 - alpha / (2 * m), df)) # get critical t per row
+
+(manual_bonf <- pairs |>
+  mutate(
+    lower.CL.bonf = estimate - crit * SE,
+    upper.CL.bonf = estimate + crit * SE,
+    p.value.bonf = p.adjust(p.value, method = "bonferroni")
+  ) |>
+  mutate(across(
+    c(estimate, SE, df, lower.CL.bonf, upper.CL.bonf, p.value.bonf),
+    ~ round(., 3)
+  )) |>
+  select(
+    Mode,
+    contrast,
+    estimate,
+    SE,
+    df,
+    lower.CL.bonf,
+    upper.CL.bonf,
+    p.value.bonf
+  ))
+
+# save results for plotting in figures.Rmd
+saveRDS(manual_bonf, here("data", "rpe_contrasts.rds"))
+```

@@ -1,0 +1,1490 @@
+---
+title: "sesoi calculations"
+output: html_document
+date: "2026-01-06"
+---
+
+## Load packages
+
+```{r}
+library(readr)
+library(lme4)
+library(tidyverse)
+library(dplyr)
+library(sjPlot)
+library(easystats)
+library(Superpower)
+library(here)
+
+# set plot theme
+theme_set(theme_classic(base_size = 14, base_family = "sans"))
+```
+
+### Assess the validity of our approach to predicting 10 to 40 m sprint SESOI from only two data points reported by Datson et al. (2022)
+
+To assess, we can examine the data from Lee et al. (2024) found at [doi.org/10.1371/journal.pone.0299204](https://doi.org/10.1371/journal.pone.0299204). These data include a 5 m sprint, and as the raw data are available we can calculate the change scores (post-pre) and regress these on the sprint distance. Following this, we can assess the regression equations for similarity.
+
+First, import that data and select only the relevant variables from the intervention group participants
+
+```{r}
+lee <- read_csv(here("data", "journal.pone.0299204.s001.csv"))
+
+lee <- lee |>
+  filter(Group == 1) |>
+  select(2, 4, 5, 7, 8, 10, 11, 13, 14)
+
+# first check descriptive data align with the paper
+mean(lee$`5sp_Pre`) # gives 1.459556, paper reports 1.45
+mean(lee$`5sp_Post`) # gives 1.351444, paper reports 1.35
+
+# so good to go ahead and create a change score
+lee <- lee |>
+  mutate(
+    `5` = `5sp_Post` - `5sp_Pre`,
+    `10` = `10sp_Post` - `10sp_Pre`,
+    `20` = `20sp_Post` - `20sp_Pre`,
+    `30` = `30sp_Post` - `30sp_Pre`
+  )
+```
+
+Reshape, organise variables, examine the relationship. Also, regress the Datson et al. (2022) estimates to obtain the regression equation
+
+```{r}
+long <- pivot_longer(
+  data = lee,
+  cols = "5":"30",
+  names_to = c("test"),
+  values_to = "time"
+)
+
+long <- long |> select(1, 10, 11)
+
+long |>
+  group_by(test) |>
+  summarise(
+    Mean = round(mean(time, na.rm = TRUE), 2),
+    SD = round(sd(time, na.rm = TRUE), 2),
+    Median = round(median(time, na.rm = TRUE), 2),
+    Min = min(time, na.rm = TRUE),
+    Max = max(time, na.rm = TRUE),
+    IQR = IQR(time, na.rm = TRUE)
+  )
+str(long)
+long$test <- as.numeric(long$test)
+# scatterplot
+long |>
+  ggplot(aes(x = test, y = time)) +
+  geom_jitter(alpha = 0.2, width = 0.2) +
+  theme_classic() +
+  geom_smooth(method = "loess", se = FALSE) +
+  geom_smooth(method = "lm", se = FALSE, color = "red")
+# mixed model
+(summary(lm <- lmer(time ~ test + (1 | NO), long)))
+tab_model(lm)
+# regression equation: y = -0.087936 + -0.005250 * x
+
+# regression of Datson et al. (2019) data
+(datson <- data.frame(test = c(5, 30), time = c(-0.09, -0.21)))
+summary(reg <- lm(time ~ test, datson))
+# contrast models
+tab_model(lm, reg, digits = 4)
+```
+
+Take homes here:
+
+-   Descriptive data between the perceived change scores from Datson et al. (-0.09 & -0.21) are not too dissimilar from the actual 5m and 30m change scores report by Lee at al. (-0.11 & -0.26)
+
+-   The regression equations are also similar
+
+    -   y = -0.0660 + -0.0048 \* x (Datson)
+
+    -   y = -0.0879 + -0.0053 \* x (Lee)
+
+Therefore, our approach has merit and we proceed by predicting 10m, 20m, and 40m SESOI from the Datson et al. data.
+
+```{r}
+(coeff <- coefficients(reg))
+(intercept <- coeff[1])
+(slope <- coeff[2])
+
+# 10 m
+(sesoi.10 <- (slope * 10) + intercept)
+(sesoi.10 <- round(sesoi.10, 2))
+# 20 m
+(sesoi.20 <- (slope * 20) + intercept)
+(sesoi.20 <- round(sesoi.20, 2))
+# 40 m
+(sesoi.40 <- (slope * 40) + intercept)
+(sesoi.40 <- round(sesoi.40, 2))
+```
+
+## Optimal sample size estimation for 10m, 20m, and 40m sprints
+
+Function for calculating pooled standard deviation for multiple samples in one vector.
+
+```{r}
+calculate_pooled_sd <- function(sds, ns) {
+  # 'sds' is a vector of standard deviations
+  # 'ns' is a vector of sample sizes
+
+  if (length(sds) != length(ns) || length(sds) < 2) {
+    stop(
+      "You must provide vectors of SDs and sample sizes for at least two samples."
+    )
+  }
+
+  # Calculate degrees of freedom for each sample
+  dfs <- ns - 1
+
+  # Calculate pooled variance
+  pooled_variance <- sum((dfs * sds^2)) / sum(dfs)
+
+  # Calculate pooled standard deviation
+  pooled_sd <- sqrt(pooled_variance)
+
+  return(pooled_sd)
+}
+```
+
+### 10m
+
+First, we need to get the covariate-outcome relationship from Thurlow et al. (2024) (<https://doi.org/10.1007/s40279-023-01959-1>) so we will import the raw data, create a change score and store appropriate study descriptives.
+
+```{r}
+(df.10 <- data.frame(
+  pre.test = c(
+    1.75,
+    1.78,
+    1.86,
+    1.80,
+    1.77,
+    1.88,
+    1.96,
+    1.90,
+    1.88,
+    1.87,
+    1.87,
+    1.84,
+    1.73,
+    1.75,
+    1.70,
+    1.88,
+    1.96,
+    1.90,
+    1.85,
+    2.12
+  ),
+  pre.test.sd = c(
+    0.11,
+    0.11,
+    0.13,
+    0.08,
+    0.06,
+    0.1,
+    0.05,
+    0.07,
+    0.07,
+    0.10,
+    0.09,
+    0.09,
+    0.07,
+    0.05,
+    0.05,
+    0.21,
+    0.12,
+    0.14,
+    0.14,
+    0.06
+  ),
+  post.test = c(
+    1.74,
+    1.70,
+    1.82,
+    1.79,
+    1.76,
+    1.86,
+    1.93,
+    1.82,
+    1.86,
+    1.82,
+    1.85,
+    1.81,
+    1.62,
+    1.64,
+    1.68,
+    1.81,
+    1.90,
+    1.82,
+    1.76,
+    2.12
+  ),
+  post.test.sd = c(
+    0.11,
+    0.12,
+    0.09,
+    0.09,
+    0.06,
+    0.1,
+    0.08,
+    0.06,
+    0.09,
+    0.14,
+    0.11,
+    0.11,
+    0.09,
+    0.07,
+    0.10,
+    0.17,
+    0.07,
+    0.11,
+    0.11,
+    0.05
+  ),
+  study.n = c(
+    18,
+    18,
+    10,
+    10,
+    13,
+    8,
+    7,
+    12,
+    21,
+    9,
+    13,
+    14,
+    8,
+    7,
+    9,
+    16,
+    15,
+    10,
+    10,
+    8
+  )
+))
+
+# create change scores
+(df.10 <- df.10 |> mutate(change = post.test - pre.test))
+
+# 10 m weighted pre-test mean
+(m.10 <- df.10$pre.test) # vector for means
+(n.10 <- df.10$study.n) # vector for n
+(wm.10 <- weighted.mean(m.10, n.10))
+(wm.10 <- round(wm.10, 2))
+
+# pooled SD
+(sd.10 <- df.10$pre.test.sd) # vector for sds
+(n.10 <- df.10$study.n) # vector for n
+(pooledsd.10 <- calculate_pooled_sd(sd.10, n.10))
+(pooledsd.10 <- round(pooledsd.10, 2))
+
+# covariate-outcome relationship
+cor.10 <- correlation(df.10, select = "pre.test", select2 = "change")
+(r.10 <- cor.10$r) # save r value
+```
+
+#### Sample size calculation
+
+```{r}
+(res.10 <- power_oneway_ancova(
+  mu = c(0, sesoi.10),
+  n_cov = 1,
+  sd = pooledsd.10,
+  r2 = r.10^2,
+  alpha_level = 0.05 / 6,
+  beta_level = .2,
+  round_up = TRUE,
+  type = "exact"
+))
+
+# dropout correction (20%)
+(ss.10 <- (res.10$N / (1 - 0.20)))
+```
+
+#### Sensitivity analysis
+
+```{r}
+# set common parameters for the 10 m ANCOVA
+n_per_group <- 11
+n_groups <- 2
+n_covariates <- 1
+sd_val <- pooledsd.10
+r2_val <- r.10^2
+alpha_level <- 0.05 / 6
+
+# define a set of 'mu' vectors to test
+(mu_scenarios <- list(
+  c(0.00, -0.01),
+  c(0.00, -0.02),
+  c(0.00, -0.03),
+  c(0.00, -0.04),
+  c(0.00, -0.05),
+  c(0.00, -0.06),
+  c(0.00, -0.07),
+  c(0.00, -0.08),
+  c(0.00, -0.09),
+  c(0.00, -0.10),
+  c(0.00, -0.11),
+  c(0.00, -0.12),
+  c(0.00, -0.13),
+  c(0.00, -0.14),
+  c(0.00, -0.15),
+  c(0.00, -0.16),
+  c(0.00, -0.17),
+  c(0.00, -0.18),
+  c(0.00, -0.19),
+  c(0.00, -0.20)
+))
+
+# create a data frame to store results
+sensitivity.10m <- data.frame(
+  scenario = as.character(),
+  baseline = as.numeric(),
+  target = as.numeric(),
+  power = as.numeric()
+)
+
+# run the analysis for each mu scenario
+for (i in 1:length(mu_scenarios)) {
+  current_mu <- mu_scenarios[[i]]
+
+  result <- power_oneway_ancova(
+    n = rep(n_per_group, n_groups), # create a vector of sample sizes
+    mu = current_mu,
+    n_cov = n_covariates,
+    sd = sd_val,
+    r2 = r2_val,
+    alpha_level = alpha_level,
+    type = "exact"
+  )
+
+  # add the results to the data frame
+  sensitivity.10m[i, ] <- c(
+    paste("Scenario", i),
+    current_mu[1],
+    current_mu[2],
+    result$power
+  )
+}
+sensitivity.10m
+
+# change chr to numeric
+sensitivity.10m <- sensitivity.10m |>
+  mutate_at(c('target', 'power'), as.numeric)
+
+# critical effect size is scenario 18, -0.18 s
+(critical.10 <- sensitivity.10m[18, 3])
+sesoi.10
+```
+
+### 20m
+
+Repeat previous process with Thurlow et al. (2024) data.
+
+```{r}
+(df.20 <- data.frame(
+  pre.test = c(
+    2.94,
+    2.96,
+    3.20,
+    3.30,
+    3.29,
+    3.20,
+    3.23,
+    3.31,
+    3.28,
+    2.96,
+    3.03,
+    3.37,
+    3.28,
+    3.43
+  ),
+  pre.test.sd = c(
+    0.11,
+    0.12,
+    0.10,
+    0.09,
+    0.08,
+    0.25,
+    0.14,
+    0.15,
+    0.15,
+    0.1,
+    0.07,
+    0.27,
+    0.25,
+    0.11
+  ),
+  post.test = c(
+    2.92,
+    2.90,
+    3.20,
+    3.25,
+    3.21,
+    3.22,
+    3.13,
+    3.23,
+    3.23,
+    2.85,
+    2.91,
+    3.20,
+    3.14,
+    3.44
+  ),
+  post.test.sd = c(
+    0.11,
+    0.10,
+    0.10,
+    0.06,
+    0.08,
+    0.22,
+    0.1,
+    0.21,
+    0.22,
+    0.13,
+    0.11,
+    0.16,
+    0.22,
+    0.08
+  ),
+  study.n = c(18, 18, 12, 9, 10, 9, 30, 13, 14, 8, 7, 10, 10, 8)
+))
+
+# Create change scores
+(df.20 <- df.20 |> mutate(change = post.test - pre.test))
+
+# get and store Thurlow et al. (2024) study descriptives
+# 20 m weighted pre-test mean
+(m.20 <- df.20$pre.test) # vector for means
+(n.20 <- df.20$study.n) # vector for n
+(wm.20 <- weighted.mean(m.20, n.20))
+(wm.20 <- round(wm.20, 2))
+
+# pooled SD
+(sd.20 <- df.20$pre.test.sd) # vector for sds
+(n.20 <- df.20$study.n) # vector for n
+(pooledsd.20 <- calculate_pooled_sd(sd.20, n.20))
+(pooledsd.20 <- round(pooledsd.20, 2))
+
+# covariate-outcome relationship
+cor.20 <- correlation(df.20, select = "pre.test", select2 = "change")
+(r.20 <- cor.20$r) # save r value
+```
+
+#### Sample size calculation
+
+```{r}
+(res.20 <- power_oneway_ancova(
+  mu = c(0, sesoi.20),
+  n_cov = 1,
+  sd = pooledsd.20,
+  r2 = r.20^2,
+  alpha_level = 0.05 / 6,
+  beta_level = .2,
+  round_up = TRUE,
+  type = "exact"
+))
+
+# dropout correction (20%)
+(ss.20 <- (res.20$N / (1 - 0.20)))
+```
+
+#### Sensitivity analysis
+
+```{r}
+# Set common parameters for the 20 m ANCOVA
+n_per_group <- 11
+n_groups <- 2
+n_covariates <- 1
+sd_val <- pooledsd.20
+r2_val <- r.20^2
+alpha_level <- 0.05 / 6
+
+# Define a set of 'mu' vectors to test
+(mu_scenarios <- list(
+  c(0.00, -0.05),
+  c(0.00, -0.06),
+  c(0.00, -0.07),
+  c(0.00, -0.08),
+  c(0.00, -0.09),
+  c(0.00, -0.10),
+  c(0.00, -0.11),
+  c(0.00, -0.12),
+  c(0.00, -0.13),
+  c(0.00, -0.14),
+  c(0.00, -0.15),
+  c(0.00, -0.16),
+  c(0.00, -0.17),
+  c(0.00, -0.18),
+  c(0.00, -0.19),
+  c(0.00, -0.20),
+  c(0.00, -0.21),
+  c(0.00, -0.22),
+  c(0.00, -0.23),
+  c(0.00, -0.24),
+  c(0.00, -0.25),
+  c(0.00, -0.26),
+  c(0.00, -0.28),
+  c(0.00, -0.30)
+))
+
+# Create a data frame to store results
+sensitivity.20m <- data.frame(
+  scenario = as.character(),
+  baseline = as.numeric(),
+  target = as.numeric(),
+  power = as.numeric()
+)
+
+# Run the analysis for each mu scenario
+for (i in 1:length(mu_scenarios)) {
+  current_mu <- mu_scenarios[[i]]
+
+  result <- power_oneway_ancova(
+    n = rep(n_per_group, n_groups), # create a vector of sample sizes
+    mu = current_mu,
+    n_cov = n_covariates,
+    sd = sd_val,
+    r2 = r2_val,
+    alpha_level = alpha_level,
+    type = "exact"
+  )
+
+  # Add the results to the data frame
+  sensitivity.20m[i, ] <- c(
+    paste("Scenario", i),
+    current_mu[1],
+    current_mu[2],
+    result$power
+  )
+}
+sensitivity.20m
+
+# Change chr to numeric
+sensitivity.20m <- sensitivity.20m %>%
+  mutate_at(c('target', 'power'), as.numeric)
+
+# critical effect size is scenario 21, -0.25 s
+(critical.20 <- sensitivity.20m[21, 3])
+# compare
+sesoi.20
+```
+
+### 40m
+
+No 40m data in Thurlow et al. (2024), so here we will use data from Haugen et al. (2020) ([doi: 10.1080/02640414.2020.1741955)](https://www.tandfonline.com/doi/full/10.1080/02640414.2020.1741955).
+
+```{r}
+(m1.40 <- 5.45) # forwards
+(sd1.40 <- 0.18) # forwards
+(n1.40 <- 90) # forwards
+(m2.40 <- 5.53) # defenders
+(sd2.40 <- 0.16) # defenders
+(n2.40 <- 110) # defenders
+(m3.40 <- 5.56) # midfielders
+(sd3.40 <- 0.17) # midfielders
+(n3.40 <- 102) # midfielders
+
+# get and store weighted mean
+(m.40 <- c(m1.40, m2.40, m3.40)) # vector for means
+(sd.40 <- c(sd1.40, sd2.40, sd3.40)) # vector for sds
+(n.40 <- c(n1.40, n2.40, n3.40)) # vector for n
+(wm.40 <- weighted.mean(m.40, n.40))
+(wm.40 <- round(wm.40, 2))
+
+# pooled SD
+(pooledsd.40 <- calculate_pooled_sd(sd.40, n.40))
+(pooledsd.40 <- round(pooledsd.40, 2))
+```
+
+#### Sample size calculation
+
+```{r}
+# no covariate-outcome relationship available from Thurlow et al. (2024), so use 20 m (r.20)
+(res.40 <- power_oneway_ancova(
+  mu = c(0, sesoi.40),
+  n_cov = 1,
+  sd = pooledsd.40,
+  r2 = r.20^2,
+  alpha_level = 0.05 / 6,
+  beta_level = .2,
+  round_up = TRUE,
+  type = "exact"
+))
+
+# dropout correction (20%)
+(ss.40 <- (res.40$N / (1 - 0.20)))
+```
+
+#### Sensitivity analysis
+
+```{r}
+# set common parameters for the 40 m ANCOVA
+n_per_group <- 11
+n_groups <- 2
+n_covariates <- 1
+sd_val <- pooledsd.40
+r2_val <- r.20^2
+alpha_level <- 0.05 / 6
+
+# define a set of 'mu' vectors to test
+(mu_scenarios <- list(
+  c(0.00, -0.09),
+  c(0.00, -0.10),
+  c(0.00, -0.11),
+  c(0.00, -0.12),
+  c(0.00, -0.13),
+  c(0.00, -0.14),
+  c(0.00, -0.15),
+  c(0.00, -0.16),
+  c(0.00, -0.17),
+  c(0.00, -0.18),
+  c(0.00, -0.19),
+  c(0.00, -0.20),
+  c(0.00, -0.21),
+  c(0.00, -0.22),
+  c(0.00, -0.23),
+  c(0.00, -0.24),
+  c(0.00, -0.26),
+  c(0.00, -0.28),
+  c(0.00, -0.29),
+  c(0.00, -0.30),
+  c(0.00, -0.31),
+  c(0.00, -0.32),
+  c(0.00, -0.33),
+  c(0.00, -0.34),
+  c(0.00, -0.35),
+  c(0.00, -0.36),
+  c(0.00, -0.37),
+  c(0.00, -0.38)
+))
+# create a data frame to store results
+sensitivity.40m <- data.frame(
+  scenario = as.character(),
+  baseline = as.numeric(),
+  target = as.numeric(),
+  power = as.numeric()
+)
+
+# run the analysis for each mu scenario
+for (i in 1:length(mu_scenarios)) {
+  current_mu <- mu_scenarios[[i]]
+
+  result <- power_oneway_ancova(
+    n = rep(n_per_group, n_groups), # create a vector of sample sizes
+    mu = current_mu,
+    n_cov = n_covariates,
+    sd = sd_val,
+    r2 = r2_val,
+    alpha_level = alpha_level,
+    type = "exact"
+  )
+
+  # add the results to the data frame
+  sensitivity.40m[i, ] <- c(
+    paste("Scenario", i),
+    current_mu[1],
+    current_mu[2],
+    result$power
+  )
+}
+sensitivity.40m
+
+# change chr to numeric
+(sensitivity.40m <- sensitivity.40m %>%
+  mutate_at(c('target', 'power'), as.numeric))
+
+# critical effect size is scenario 23, -0.29 s
+(critical.40 <- sensitivity.40m[23, 3])
+# compare
+sesoi.40
+```
+
+## Optimal sample size estimation for VMax
+
+Haugen & Buchheit (2016) (<https://doi.org/10.1007/s40279-015-0446-0>) proposed that 5% is the typical training induced change in maximal sprinting speed. Therefore, we will first calculate the mean and sd of maximal sprint speed in soccer players reported in Table 1 of Haugen et al. (2020) (<https://doi.org/10.1080/02640414.2020.1741955>). Then, once we have the weighted we calculate +5% of that value for our target change.
+
+```{r}
+# get and store VMax data from Haugen (2020)
+(m1.vmax <- 9.3) # forwards
+(sd1.vmax <- 0.4) # forwards
+(n1.vmax <- 90) # forwards
+(m2.vmax <- 9.3) # defenders
+(sd2.vmax <- 0.4) # defenders
+(n2.vmax <- 110) # defenders
+(m3.vmax <- 9.2) # midfielders
+(sd3.vmax <- 0.4) # midfielders
+(n3.vmax <- 102) # midfielders
+
+# get and store weighted mean
+(m.vmax <- c(m1.vmax, m2.vmax, m3.vmax)) # vector for means
+(sd.vmax <- c(sd1.vmax, sd2.vmax, sd3.vmax)) # vector for sds
+(n.vmax <- c(n1.vmax, n2.vmax, n3.vmax)) # vector for n
+(wm.vmax <- weighted.mean(m.vmax, n.vmax))
+(wm.vmax <- round(wm.vmax, 2))
+
+# pooled SD
+(pooledsd.vmax <- calculate_pooled_sd(sd.vmax, n.vmax))
+(pooledsd.vmax <- round(pooledsd.vmax, 2))
+
+# calculate sesoi for maximal sprinting speed
+(sesoi.vmax <- (wm.vmax * 1.05) - wm.vmax) # make sure it is multiplier
+(sesoi.vmax <- round(sesoi.vmax, 2))
+```
+
+#### Sample size calculation
+
+```{r}
+# no covariate-outcome relationship available from Thurlow et al. (2024), so use 20 m (r.20)
+(res.vmax <- power_oneway_ancova(
+  mu = c(0, sesoi.vmax),
+  n_cov = 1,
+  sd = pooledsd.vmax,
+  r2 = r.20^2,
+  alpha_level = 0.05 / 6,
+  beta_level = .2,
+  round_up = TRUE,
+  type = "exact"
+))
+
+# dropout correction (20%)
+(ss.vmax <- (res.vmax$N / (1 - 0.20)))
+```
+
+#### Sensitivity analysis
+
+```{r}
+# set common parameters for the max sprinting speed ANCOVA
+n_per_group <- 11
+n_groups <- 2
+n_covariates <- 1
+sd_val <- pooledsd.vmax
+r2_val <- r.20^2
+alpha_level <- 0.05 / 6
+
+# define a set of 'mu' vectors to test
+(mu_scenarios <- list(
+  c(0.00, 0.225),
+  c(0.00, 0.25),
+  c(0.00, 0.275),
+  c(0.00, 0.30),
+  c(0.00, 0.325),
+  c(0.00, 0.35),
+  c(0.00, 0.375),
+  c(0.00, 0.40),
+  c(0.00, 0.425),
+  c(0.00, 0.45),
+  c(0.00, 0.475),
+  c(0.00, 0.50),
+  c(0.00, 0.525),
+  c(0.00, 0.55),
+  c(0.00, 0.575),
+  c(0.00, 0.60),
+  c(0.00, 0.625),
+  c(0.00, 0.65),
+  c(0.00, 0.675),
+  c(0.00, 0.70),
+  c(0.00, 0.725),
+  c(0.00, 0.75),
+  c(0.00, 0.775),
+  c(0.00, 0.80),
+  c(0.00, 0.825),
+  c(0.00, 0.85),
+  c(0.00, 0.875),
+  c(0.00, 0.90)
+))
+
+# create a data frame to store results
+sensitivity.vmax <- data.frame(
+  scenario = as.character(),
+  baseline = as.numeric(),
+  target = as.numeric(),
+  power = as.numeric()
+)
+
+# run the analysis for each mu scenario
+for (i in 1:length(mu_scenarios)) {
+  current_mu <- mu_scenarios[[i]]
+
+  result <- power_oneway_ancova(
+    n = rep(n_per_group, n_groups), # create a vector of sample sizes
+    mu = current_mu,
+    n_cov = n_covariates,
+    sd = sd_val,
+    r2 = r2_val,
+    alpha_level = alpha_level,
+    type = "exact"
+  )
+
+  # add the results to the data frame
+  sensitivity.vmax[i, ] <- c(
+    paste("Scenario", i),
+    current_mu[1],
+    current_mu[2],
+    result$power
+  )
+}
+sensitivity.vmax
+
+# change chr to numeric
+(sensitivity.vmax <- sensitivity.vmax %>%
+  mutate_at(c('target', 'power'), as.numeric))
+
+# critical effect size is scenario 19, 0.675 m.s
+(critical.vmax <- sensitivity.vmax[19, 3])
+# compare
+sesoi.vmax
+```
+
+## Optimal sample size estimation for CMJ
+
+Here, we can use the data directly from Datson et al. (2022) whereby a 2.8 cm was reported as the meaningful change.
+
+```{r}
+(sesoi.cmj <- 2.8)
+```
+
+To determine other parameters needed for the sample size calculation, we can create dataframe with the pre and change values from Thurlow et al. (2024) but using only studies the most common cmj method, i.e., Optojump n = 9 studies.
+
+```{r}
+(df.cmj <- data.frame(
+  pre.test = c(35.76, 43.87, 47.1, 35.5, 39.96, 29.4, 41.9, 36.6, 34.7),
+  pre.test.sd = c(5.26, 6.88, 4.4, 5.8, 5.11, 6.4, 3.8, 4.4, 10.0),
+  post.test = c(37.38, 39.0, 49.3, 38.0, 40.86, 30.5, 42.53, 37.33, 35.5),
+  post.test.sd = c(5.32, 7.76, 2.6, 7.0, 5.2, 6.8, 3.58, 5.38, 8.6),
+  study.n = c(8, 8, 8, 7, 21, 12, 8, 7, 16)
+))
+
+# create change score
+(df.cmj <- df.cmj |> mutate(change = post.test - pre.test))
+
+# get and store weighted pre test mean
+(m.cmj <- df.cmj$pre.test) # vector for means
+(sd.cmj <- df.cmj$pre.test.sd) # vector for sds
+(n.cmj <- df.cmj$study.n) # vector for n
+(wm.cmj <- weighted.mean(m.cmj, n.cmj))
+(wm.cmj <- round(wm.cmj, 2))
+
+# get pooled pre test sd
+(pooledsd.cmj <- calculate_pooled_sd(sd.cmj, n.cmj))
+(pooledsd.cmj <- round(pooledsd.cmj, 1))
+
+# calculate target change
+(target.cmj <- wm.cmj + sesoi.cmj)
+
+# covariate-outcome relationship
+cor.cmj <- correlation(df.cmj, select = "pre.test", select2 = "change")
+(r.cmj <- cor.cmj$r) # save r value
+```
+
+#### Sample size calculation
+
+```{r}
+(res.cmj <- power_oneway_ancova(
+  mu = c(0, sesoi.cmj),
+  n_cov = 1,
+  sd = pooledsd.cmj,
+  r2 = r.cmj^2,
+  alpha_level = 0.05 / 6,
+  beta_level = .2,
+  round_up = TRUE,
+  type = "exact"
+))
+
+# dropout correction
+(ss.cmj <- (res.cmj$N / (1 - 0.20)))
+```
+
+#### Sensitivity analysis
+
+```{r}
+# set common parameters for the CMJ ANCOVA
+n_per_group <- 11
+n_groups <- 2
+n_covariates <- 1
+sd_val <- pooledsd.cmj
+r2_val <- r.cmj^2
+alpha_level <- 0.05 / 6
+
+# define a set of 'mu' vectors to test
+(mu_scenarios <- list(
+  c(0.00, 0.50),
+  c(0.00, 1.00),
+  c(0.00, 1.50),
+  c(0.00, 2.00),
+  c(0.00, 2.50),
+  c(0.00, 3.00),
+  c(0.00, 3.50),
+  c(0.00, 4.00),
+  c(0.00, 4.50),
+  c(0.00, 5.00),
+  c(0.00, 5.50),
+  c(0.00, 6.00),
+  c(0.00, 6.50),
+  c(0.00, 7.00),
+  c(0.00, 7.50),
+  c(0.00, 8.00),
+  c(0.00, 8.50),
+  c(0.00, 9.00),
+  c(0.00, 9.50),
+  c(0.00, 10.00),
+  c(0.00, 10.25),
+  c(0.00, 10.50),
+  c(0.00, 11.00),
+  c(0.00, 11.50),
+  c(0.00, 12.00),
+  c(0.00, 12.50),
+  c(0.00, 13.00),
+  c(0.00, 13.50),
+  c(0.00, 14.00)
+))
+
+# create a data frame to store results
+sensitivity.cmj <- data.frame(
+  scenario = as.character(),
+  baseline = as.numeric(),
+  target = as.numeric(),
+  power = as.numeric()
+)
+
+# run the analysis for each mu scenario
+for (i in 1:length(mu_scenarios)) {
+  current_mu <- mu_scenarios[[i]]
+
+  result <- power_oneway_ancova(
+    n = rep(n_per_group, n_groups), # Create a vector of sample sizes
+    mu = current_mu,
+    n_cov = n_covariates,
+    sd = sd_val,
+    r2 = r2_val,
+    alpha_level = alpha_level,
+    type = "exact"
+  )
+
+  # add the results to the data frame
+  sensitivity.cmj[i, ] <- c(
+    paste("Scenario", i),
+    current_mu[1],
+    current_mu[2],
+    result$power
+  )
+}
+sensitivity.cmj
+
+# change chr to numeric
+(sensitivity.cmj <- sensitivity.cmj %>%
+  mutate_at(c('target', 'power'), as.numeric))
+
+# critical effect size is scenario 21, 10.3 cm
+(critical.cmj <- sensitivity.cmj[21, 3])
+# compare
+sesoi.cmj
+```
+
+## Optimal sample size estimation for MAS
+
+Here, we can use an extrapolation of the Datson et al. (2022) data to a change in stage \~ 0.5kmh and then convert to m.s.
+
+```{r}
+(sesoi.mas <- (0.5 / 3.8))
+(sesoi.mas <- round(sesoi.mas, 2))
+```
+
+To determine other parameters needed for the sample size calculation, we can create dataframe with descriptive data from Tønnessen et al. (2013) (<https://doi.org/10.1123/ijspp.8.3.323>) and pre-post change scores from Thurlown et al. (2024).
+
+```{r}
+(m1.mas <- 16.2) # forwards
+(sd1.mas <- 1.0) # forwards
+(n1.mas <- 167) # forwards
+(m2.mas <- 16.3) # defenders
+(sd2.mas <- 0.9) # defenders
+(n2.mas <- 237) # defenders
+(m3.mas <- 16.4) # midfielders
+(sd3.mas <- 0.9) # midfielders
+(n3.mas <- 253) # midfielders
+
+# get and store weighted mean
+(m.mas <- c(m1.mas, m2.mas, m3.mas)) # vector for means
+(sd.mas <- c(sd1.mas, sd2.mas, sd3.mas)) # vector for sds
+(n.mas <- c(n1.mas, n2.mas, n3.mas)) # vector for n
+(wm.mas <- weighted.mean(m.mas, n.mas))
+(wm.mas <- round(wm.mas, 2))
+# convert to m.s
+(wm.mas <- (wm.mas / 3.6))
+(wm.mas <- round(wm.mas, 2))
+
+# pooled SD
+(pooledsd.mas <- calculate_pooled_sd(sd.mas, n.mas))
+(pooledsd.mas <- round(pooledsd.mas, 2))
+# convert to m.s
+(pooledsd.mas <- (pooledsd.mas / 3.6)) # convert to m.s
+(pooledsd.mas <- round(pooledsd.mas, 2))
+
+# YYIR1 data from Thurlow et al. (2024)
+# Get the covariate-outcome relationship from Thurlow et al. (2024)
+(df.yoyo <- data.frame(
+  pre.test = c(
+    1105,
+    1092,
+    1642,
+    1686,
+    2472,
+    2500,
+    1917,
+    1667,
+    1792,
+    2307,
+    1832,
+    1029,
+    1515,
+    1350,
+    1455,
+    1764,
+    914,
+    1830,
+    1691,
+    605
+  ),
+  pre.test.sd = c(
+    314,
+    238,
+    365,
+    359,
+    223,
+    246,
+    440,
+    441,
+    209,
+    252,
+    310,
+    273,
+    275,
+    450,
+    188,
+    334,
+    330,
+    274,
+    600,
+    233
+  ),
+  post.test = c(
+    1435,
+    1441,
+    1822,
+    1811,
+    2604,
+    2696,
+    2455,
+    1852,
+    2065,
+    2480,
+    2216,
+    1303,
+    1612,
+    1725,
+    1677,
+    1798,
+    985,
+    2270,
+    2183,
+    775
+  ),
+  post.test.sd = c(
+    376,
+    271,
+    461,
+    260,
+    362,
+    344,
+    493,
+    499,
+    331,
+    159,
+    395,
+    211,
+    290,
+    479,
+    308,
+    335,
+    337,
+    294,
+    645,
+    242
+  ),
+  study.n = c(
+    18,
+    18,
+    18,
+    18,
+    10,
+    10,
+    13,
+    8,
+    8,
+    9,
+    5,
+    7,
+    13,
+    9,
+    12,
+    10,
+    10,
+    8,
+    7,
+    8
+  )
+))
+
+(df.yoyo <- df.yoyo |> mutate(change = post.test - pre.test))
+
+# covariate-outcome relationship
+plot(cor_test(df.yoyo, "pre.test", "change")) # view relationship
+cor.yoyo <- correlation(df.yoyo, select = "pre.test", select2 = "change")
+(r.yoyo <- cor.yoyo$r) # save r value
+```
+
+#### Sample size calculation
+
+```{r}
+(res.mas <- power_oneway_ancova(
+  mu = c(0, sesoi.mas),
+  n_cov = 1,
+  sd = pooledsd.mas,
+  r2 = r.yoyo^2,
+  alpha_level = 0.05 / 6,
+  beta_level = .2,
+  round_up = TRUE,
+  type = "exact"
+))
+
+# dropout correction (20%)
+(ss.mas <- (res.mas$N / (1 - 0.20)))
+```
+
+#### Sensitivity analysis
+
+```{r}
+# set common parameters for the MAS ANCOVA
+n_per_group <- 11
+n_groups <- 2
+n_covariates <- 1
+sd_val <- pooledsd.mas
+r2_val <- r.yoyo^2
+alpha_level <- 0.05 / 6
+
+# define a set of 'mu' vectors to test
+(mu_scenarios <- list(
+  c(0.00, 0.10),
+  c(0.00, 0.12),
+  c(0.00, 0.14),
+  c(0.00, 0.16),
+  c(0.00, 0.18),
+  c(0.00, 0.20),
+  c(0.00, 0.22),
+  c(0.00, 0.24),
+  c(0.00, 0.26),
+  c(0.00, 0.28),
+  c(0.00, 0.30),
+  c(0.00, 0.32),
+  c(0.00, 0.34),
+  c(0.00, 0.36),
+  c(0.00, 0.38),
+  c(0.00, 0.40),
+  c(0.00, 0.42),
+  c(0.00, 0.44),
+  c(0.00, 0.46),
+  c(0.00, 0.48),
+  c(0.00, 0.50),
+  c(0.00, 0.52),
+  c(0.00, 0.54),
+  c(0.00, 0.56),
+  c(0.00, 0.58),
+  c(0.00, 0.60),
+  c(0.00, 0.62),
+  c(0.00, 0.64)
+))
+
+# create a data frame to store results
+sensitivity.mas <- data.frame(
+  scenario = as.character(),
+  baseline = as.numeric(),
+  target = as.numeric(),
+  power = as.numeric()
+)
+
+# run the analysis for each mu scenario
+for (i in 1:length(mu_scenarios)) {
+  current_mu <- mu_scenarios[[i]]
+
+  result <- power_oneway_ancova(
+    n = rep(n_per_group, n_groups), # Create a vector of sample sizes
+    mu = current_mu,
+    n_cov = n_covariates,
+    sd = sd_val,
+    r2 = r2_val,
+    alpha_level = alpha_level,
+    type = "exact"
+  )
+
+  # Add the results to the data frame
+  sensitivity.mas[i, ] <- c(
+    paste("Scenario", i),
+    current_mu[1],
+    current_mu[2],
+    result$power
+  )
+}
+sensitivity.mas
+
+# change chr to numeric
+(sensitivity.mas <- sensitivity.mas %>%
+  mutate_at(c('target', 'power'), as.numeric))
+
+# critical effect size is scenario 18, 0.44 m.s
+(critical.mas <- sensitivity.mas[18, 3])
+# compare
+sesoi.mas
+```
+
+## Save intermediate results for plotting in figures.Rmd
+
+```{r}
+# create a list with all sensitivity analysis results and annotation values
+sensitivity_data <- list(
+  # sensitivity analysis data frames
+  sensitivity.10m = sensitivity.10m,
+  sensitivity.20m = sensitivity.20m,
+  sensitivity.40m = sensitivity.40m,
+  sensitivity.vmax = sensitivity.vmax,
+  sensitivity.cmj = sensitivity.cmj,
+  sensitivity.mas = sensitivity.mas,
+  # SESOI values (smallest effect size of interest)
+  sesoi.10 = sesoi.10,
+  sesoi.20 = sesoi.20,
+  sesoi.40 = sesoi.40,
+  sesoi.vmax = sesoi.vmax,
+  sesoi.cmj = sesoi.cmj,
+  sesoi.mas = sesoi.mas,
+  # critical effect sizes (80% power threshold)
+  critical.10 = critical.10,
+  critical.20 = critical.20,
+  critical.40 = critical.40,
+  critical.vmax = critical.vmax,
+  critical.cmj = critical.cmj,
+  critical.mas = critical.mas
+)
+
+# save to .rds file
+saveRDS(sensitivity_data, here("data", "sensitivity_analysis.rds"))
+```
+
+### Pre-post-intervention correlations
+
+Correlations to examine the strength of the pre-post-intervention correlation for our outcome measures. For 10 m and 20m, we can use the data from Lee et al. (2024)
+
+```{r}
+# 10m
+cor(lee$`10sp_Pre`, lee$`10sp_Post`, method = c("pearson"))
+# 20m
+cor(lee$`20sp_Pre`, lee$`20sp_Post`, method = c("pearson"))
+```
+
+The strength of these correlations is not too disimilar from Taylor et al. (2019) <https://www.tandfonline.com/doi/full/10.1080/02640414.2019.1671688>. This paper also includes CMJ and YoYo.
+
+```{r}
+df10 <- data.frame(
+  pre = c(
+    1.85,
+    1.75,
+    1.75,
+    1.72,
+    1.74,
+    1.67,
+    1.69,
+    1.71,
+    1.82,
+    1.80,
+    1.78,
+    1.84,
+    1.75
+  ),
+  post = c(
+    1.76,
+    1.69,
+    1.64,
+    1.70,
+    1.77,
+    1.56,
+    1.67,
+    1.65,
+    1.81,
+    1.64,
+    1.62,
+    1.60,
+    1.69
+  )
+)
+cor(df10$pre, df10$post, method = c("pearson"))
+
+df20 <- data.frame(
+  pre = c(
+    3.2,
+    2.98,
+    3.08,
+    3.03,
+    3.11,
+    2.92,
+    3.08,
+    2.95,
+    3.20,
+    3.11,
+    3.12,
+    3.12,
+    2.96
+  ),
+  post = c(
+    3.21,
+    2.92,
+    2.96,
+    2.97,
+    3.03,
+    2.79,
+    2.95,
+    2.85,
+    3.13,
+    2.88,
+    2.92,
+    2.85,
+    2.97
+  )
+)
+cor(df20$pre, df10$post, method = c("pearson"))
+
+dfcmj <- data.frame(
+  pre = c(
+    35.0,
+    34.0,
+    39.7,
+    36.8,
+    37.6,
+    33.8,
+    44.4,
+    45.9,
+    40.5,
+    41.2,
+    37.8,
+    39.8,
+    43.1
+  ),
+  post = c(
+    35.6,
+    36.1,
+    40.4,
+    36.6,
+    39.8,
+    37.0,
+    43.9,
+    48.4,
+    41.5,
+    43.9,
+    38.4,
+    39.7,
+    45.6
+  )
+)
+cor(dfcmj$pre, dfcmj$post, method = c("pearson"))
+
+dfyy <- data.frame(
+  pre = c(
+    1880,
+    1600,
+    1200,
+    1920,
+    1440,
+    2600,
+    1800,
+    1920,
+    1880,
+    1640,
+    1800,
+    2200,
+    1880
+  ),
+  post = c(
+    2360,
+    1760,
+    2400,
+    1760,
+    1880,
+    2760,
+    1840,
+    2080,
+    1720,
+    2360,
+    1800,
+    2360,
+    2760
+  )
+)
+cor(dfyy$pre, dfyy$post, method = c("pearson"))
+```
+
+Overall, the strength of the pre-post-intervention correlations varies with the type of test and appears strongest for CMJ.
+
+### Establishing linearity across 10m, 20m, 30m, and 40m sprints (not used in the revision)
+
+Using the data from Haugen et al. (2019) <https://doi.org/10.18710/PJONBM>. First, wrangle the data and select required columns and set variables
+
+```{r}
+df <- read_csv(here("data", "Sprinttest_Olympiatoppen.csv"))
+# remove first now
+df <- df |> slice(-1)
+# rename
+df <- df |> rename("10" = "10 m", "20" = "20 m", "30" = "30 m", "40" = "40 m")
+# pivot longer for desc. and analysis
+df <- pivot_longer(
+  data = df,
+  cols = c("10":"40"),
+  names_to = "distance",
+  values_to = "time"
+)
+# select required columns
+colnames(df)
+df <- df |> select("ID", "Sport", "Sex", "distance", "time")
+# set variables
+df$Sport <- as.factor(df$Sport)
+df$Sex <- as.factor(df$Sex)
+df$distance <- as.numeric(df$distance)
+df$time <- as.numeric(df$time)
+```
+
+To assess linearity, get descriptives, draw a scatterplot and run a mixed model for the r2.
+
+```{r}
+# descriptives
+df |>
+  group_by(distance) |>
+  summarise(
+    Mean = round(mean(time, na.rm = TRUE), 2),
+    SD = round(sd(time, na.rm = TRUE), 2),
+    Median = round(median(time, na.rm = TRUE), 2),
+    Min = min(time, na.rm = TRUE),
+    Max = max(time, na.rm = TRUE),
+    IQR = IQR(time, na.rm = TRUE)
+  )
+# scatterplot
+df |>
+  ggplot(aes(x = distance, y = time)) +
+  geom_jitter(alpha = 0.1, width = 0.6) +
+  theme_classic() +
+  geom_smooth(method = "loess", se = FALSE) +
+  geom_smooth(method = "lm", se = FALSE, color = "red")
+# linear mixed model
+(lm <- lmer(time ~ distance + (1 | ID), df))
+tab_model(lm)
+plot(lm, which = 1) # Residuals vs Fitted
+# regression equation: y = 0.88 + 0.13 * x
+```
+
+Marginal R2 of 0.960 suggests a strong linear relationship.

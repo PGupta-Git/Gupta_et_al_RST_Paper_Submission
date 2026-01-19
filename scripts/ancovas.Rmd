@@ -1,0 +1,359 @@
+---
+title: "ancova"
+output: html_document
+date: "2026-01-07"
+---
+
+## Load packages
+
+```{r}
+library(readr)
+library(visdat)
+library(tidyverse)
+library(lme4)
+library(easystats)
+library(emmeans)
+library(broom)
+library(estimatr)
+library(here)
+
+# set theme
+theme_set(theme_classic())
+```
+
+### Data import, wrangling, and descriptives
+
+```{r}
+# load data
+df <- read_csv(here("data", "ANCOVA Final.csv"))
+
+# create change scores
+(df <- df |> mutate(Change = Post - Pre))
+
+# rename groups
+df$Group <- df$Group |>
+  dplyr::case_match("10-sec" ~ "Group 1", "20-sec" ~ "Group 2")
+
+# check for missing data
+vis_miss(df)
+
+# descriptives ----
+df |>
+  group_by(Test, Group) |>
+  summarise(
+    mean = round(mean(Pre, na.rm = TRUE), 3),
+    sd = round(sd(Change, na.rm = TRUE), 3),
+    min = round(min(Change, na.rm = TRUE), 3),
+    max = round(max(Change, na.rm = TRUE), 3),
+    n = n()
+  )
+```
+
+### 10m ancova
+
+```{r}
+df.10 <- df |> filter(Test == "Time_10m") # separate dataframe for 10m
+(lm.10m <- lm(Change ~ Pre + Group, data = df.10))
+
+# get estimated marginal means & the contrast
+(means.10m <- estimate_means(lm.10m, by = "Group"))
+(difference.10m <- estimate_contrasts(lm.10m, contrast = "Group", length = 1))
+
+# check residuals/errors
+plot(density(lm.10m$residuals))
+
+# relationship between fitted values and residuals
+fitted.10 <- augment(lm.10m)
+ggplot(fitted.10, aes(x = .fitted, y = .resid)) +
+  geom_point(aes(color = Group)) +
+  geom_smooth(method = "lm") # generally OK and no clustering
+
+# histogram
+ggplot(fitted.10, aes(x = .resid)) +
+  geom_histogram(binwidth = 0.05, color = "white") # nice
+
+# test checks
+check_heteroscedasticity(lm.10m) # fine
+check_normality(lm.10m) # fine
+
+# outlier check
+(out.df10 <- check_outliers(df.10, method = "zscore_robust", ID = "ID"))
+# fine to proceed with all data as change of -0.02 is plausible
+(out.lm.10m <- check_outliers(lm.10m, method = "cook"))
+# none impacting the model
+
+# extract estimate, residual df, and se
+summary(lm.10m)
+(est.10 <- summary(lm.10m)$coeff[3])
+(se.10 <- summary(lm.10m)$coeff[6])
+(df.10 <- summary(lm.10m)$df[2])
+(p.10 <- summary(lm.10m)$coeff[12])
+```
+
+### 20m ancova
+
+```{r}
+df.20 <- df |> filter(Test == "Time_20m") # separate dataframe for 20m
+(lm.20m <- lm(Change ~ Pre + Group, data = df.20))
+
+# get estimated marginal means & the contrast
+(means.20m <- estimate_means(lm.20m, by = "Group"))
+(difference.20m <- estimate_contrasts(lm.20m, contrast = "Group"))
+
+# check residuals/errors
+plot(density(lm.20m$residuals))
+
+# relationship between fitted values and residuals
+fitted.20 <- augment(lm.20m)
+ggplot(fitted.20, aes(x = .fitted, y = .resid)) +
+  geom_point(aes(color = Group)) +
+  geom_smooth(method = "lm") # bottom left?
+
+# histogram
+ggplot(fitted.20, aes(x = .resid)) +
+  geom_histogram(binwidth = 0.05, color = "white")
+
+# test checks
+check_heteroscedasticity(lm.20m) # fine, just....
+check_normality(lm.20m) # less so
+
+# outlier check
+(out.df.20 <- check_outliers(df.20, method = "zscore_robust", ID = "ID"))
+# fine to proceed with all data as -0.34 change is plausible
+(out.lm.20m <- check_outliers(lm.20m, method = "cook"))
+plot(out.lm.20m)
+# 22 impacting the model but barely and data plausible
+
+# rerun model with robust se estimates
+(lm.20m_r <- lm_robust(Change ~ Pre + Group, data = df.20, se_type = "stata"))
+tidy(lm.20m, conf.int = T)
+tidy(lm.20m_r, conf.int = T) # use
+
+# extract estimate, residual df, and se
+summary(lm.20m)
+summary(lm.20m_r)
+(est.20 <- summary(lm.20m_r)$coeff[3])
+(se.20 <- summary(lm.20m_r)$coeff[6])
+(df.20 <- summary(lm.20m_r)$df[1])
+(p.20 <- summary(lm.20m_r)$coeff[12])
+```
+
+### 40m ancova
+
+```{r}
+df.40 <- df |> filter(Test == "Time_40m") # separate dataframe for 40m
+(lm.40m <- lm(Change ~ Pre + Group, data = df.40))
+
+# get estimated marginal means & the contrast
+(means.40m <- estimate_means(lm.40m, by = "Group"))
+(difference.40m <- estimate_contrasts(lm.40m, contrast = "Group"))
+
+# check residuals/errors
+plot(density(lm.40m$residuals))
+
+# relationship between fitted values and residuals
+fitted.40 <- augment(lm.40m)
+ggplot(fitted.40, aes(x = .fitted, y = .resid)) +
+  geom_point(aes(color = Group)) +
+  geom_smooth(method = "lm") # bottom left again
+
+# histogram
+ggplot(fitted.40, aes(x = .resid)) +
+  geom_histogram(binwidth = 0.05, color = "white")
+
+# test checks
+check_heteroscedasticity(lm.40m) # not good
+check_normality(lm.40m) # not good
+
+# outlier check
+(out.df.40 <- check_outliers(df.40, method = "zscore_robust", ID = "ID"))
+# values are plausible
+(out.lm.40m <- check_outliers(lm.40m, method = "cook"))
+plot(out.lm.40m)
+# 22 again impacting the model but data plausible
+
+# rerun model with robust se estimates
+(lm.40m_r <- lm_robust(Change ~ Pre + Group, data = df.40, se_type = "stata"))
+tidy(lm.40m, conf.int = T)
+tidy(lm.40m_r, conf.int = T) # use
+
+# extract estimate, residual df, and se
+summary(lm.40m)
+summary(lm.40m_r)
+(est.40 <- summary(lm.40m_r)$coeff[3])
+(se.40 <- summary(lm.40m_r)$coeff[6])
+(df.40 <- summary(lm.40m_r)$df[1])
+(p.40 <- summary(lm.40m_r)$coeff[12])
+```
+
+### VMax ancova
+
+```{r}
+df.vmax <- df |> filter(Test == "Max_Velocity") # separate dataframe for Vmax
+(lm.vmax <- lm(Change ~ Pre + Group, data = df.vmax))
+
+# get estimated marginal means & the contrast
+(means.vmax <- estimate_means(lm.vmax, by = "Group"))
+(difference.vmax <- estimate_contrasts(lm.vmax, contrast = "Group"))
+
+# check residuals/errors
+plot(density(lm.vmax$residuals))
+
+# relationship between fitted values and residuals
+fitted.vmax <- augment(lm.vmax)
+ggplot(fitted.vmax, aes(x = .fitted, y = .resid)) +
+  geom_point(aes(color = Group)) +
+  geom_smooth(method = "lm") # fine (ish)
+
+# histogram
+ggplot(fitted.vmax, aes(x = .resid)) +
+  geom_histogram(binwidth = 0.05, color = "white") # fine (ish)
+
+# test checks
+check_heteroscedasticity(lm.vmax) # not fine
+check_normality(lm.vmax) # fine
+
+# outlier check
+(out.df.vmax <- check_outliers(df.vmax, method = "zscore_robust", ID = "ID"))
+# value is large but plausible given intervention and time.
+(out.lm.vmax <- check_outliers(lm.vmax, method = "cook"))
+# none detected
+
+# rerun model with robust se estimates
+(lm.vmax_r <- lm_robust(
+  Change ~ Pre + Group,
+  data = df.vmax,
+  se_type = "stata"
+))
+tidy(lm.vmax, conf.int = T)
+tidy(lm.vmax_r, conf.int = T) # little impact
+
+# extract estimate, residual df, and se
+summary(lm.vmax)
+summary(lm.vmax_r)
+(est.vmax <- summary(lm.vmax_r)$coeff[3])
+(se.vmax <- summary(lm.vmax_r)$coeff[6])
+(df.vmax <- summary(lm.vmax_r)$df[1])
+(p.vmax <- summary(lm.vmax_r)$coeff[12])
+```
+
+### CMJ ancova
+
+```{r}
+df.cmj <- df |> filter(Test == "CMJH") # separate dataframe for CMJ
+(lm.cmj <- lm(Change ~ Pre + Group, data = df.cmj))
+
+# get estimated marginal means & the contrast
+(means.cmj <- estimate_means(lm.cmj, by = "Group"))
+(difference.cmj <- estimate_contrasts(lm.cmj, contrast = "Group"))
+
+# check residuals/errors
+plot(density(lm.cmj$residuals))
+
+# relationship between fitted values and residuals
+fitted.cmj <- augment(lm.cmj)
+ggplot(fitted.cmj, aes(x = .fitted, y = .resid)) +
+  geom_point(aes(color = Group)) +
+  geom_smooth(method = "lm") # top right??
+
+# histogram
+ggplot(fitted.cmj, aes(x = .resid)) +
+  geom_histogram(binwidth = 0.5, color = "white") # ditto
+
+# test checks
+check_heteroscedasticity(lm.cmj) # not fine
+check_normality(lm.cmj) # not fine
+
+# outlier check
+(out.df.cmj <- check_outliers(df.cmj, method = "zscore_robust", ID = "ID"))
+# value is large but plausible given intervention and time.
+(out.lm.cmj <- check_outliers(lm.vmax, method = "cook"))
+# none detected
+
+# rerun model with robust se estimates
+(lm.cmj_r <- lm_robust(Change ~ Pre + Group, data = df.cmj, se_type = "stata"))
+tidy(lm.cmj, conf.int = T)
+tidy(lm.cmj_r, conf.int = T) # use
+
+# extract estimate, residual df, and se
+summary(lm.cmj)
+summary(lm.cmj_r)
+(est.cmj <- summary(lm.cmj_r)$coeff[3])
+(se.cmj <- summary(lm.cmj_r)$coeff[6])
+(df.cmj <- summary(lm.cmj_r)$df[1])
+(p.cmj <- summary(lm.cmj_r)$coeff[12])
+```
+
+### MAS ancova
+
+```{r}
+df.mas <- df |> filter(Test == "MAS") # separate dataframe for MAS
+(lm.mas <- lm(Change ~ Pre + Group, data = df.mas))
+
+# get estimated marginal means & the contrast
+(means.mas <- estimate_means(lm.mas, by = "Group"))
+(difference.mas <- estimate_contrasts(lm.mas, contrast = "Group"))
+
+# Check residuals/errors
+plot(density(lm.mas$residuals))
+
+# Look at relationship between fitted values and residuals
+fitted.mas <- augment(lm.mas)
+ggplot(fitted.mas, aes(x = .fitted, y = .resid)) +
+  geom_point(aes(color = Group)) +
+  geom_smooth(method = "lm") # top right?
+
+# Histogram
+ggplot(fitted.mas, aes(x = .resid)) +
+  geom_histogram(binwidth = 0.05, color = "white") # ditto
+
+# Test checks
+check_heteroscedasticity(lm.mas) # fine
+check_normality(lm.mas) # fine
+
+# Outlier check
+(out.df.mas <- check_outliers(df.mas, method = "zscore_robust", ID = "ID"))
+# value is large but plausible given intervention and time.
+(out.lm.mas <- check_outliers(lm.mas, method = "cook"))
+# none detected
+
+# extract estimate, residual df, and se
+summary(lm.mas)
+(est.mas <- summary(lm.mas)$coeff[3])
+(se.mas <- summary(lm.mas)$coeff[6])
+(df.mas <- summary(lm.mas)$df[2])
+(p.mas <- summary(lm.mas)$coeff[12])
+```
+
+### Bonferroni adjusted 95%CI CIs and p values
+
+```{r}
+# CIs first
+# ancova estimates, residual df, and se into one vector
+(est <- c(est.10, est.20, est.40, est.vmax, est.cmj, est.mas))
+(se <- c(se.10, se.20, se.40, se.vmax, se.cmj, se.mas))
+(df <- c(df.10, df.20, df.40, df.vmax, df.cmj, df.mas))
+
+(alpha <- 0.05)
+(m <- length(est)) # 6 tests
+
+# get sd from SE so that SE = sd / sqrt(n)
+(sd <- se * sqrt(19)) # residual df
+# bonferroni two-sided critical value for each test
+crit.t <- qt(1 - alpha / (2 * m), df = df)
+
+(lower.t <- est - crit.t * se)
+(upper.t <- est + crit.t * se)
+
+(ci_bonf_adj <- data.frame(
+  estimate = round(est, 2),
+  lower = round(lower.t, 2),
+  upper = round(upper.t, 2)
+))
+
+# p values
+round(
+  p.adjust(c(p.10, p.20, p.40, p.vmax, p.cmj, p.mas), method = "bonferroni"),
+  2
+)
+```
