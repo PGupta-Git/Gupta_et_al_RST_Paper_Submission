@@ -32,8 +32,8 @@ The repository includes:
 
 *   **Language:** R (version 4.0 or later recommended)
 *   **Primary R Packages:**
-    *   **Data Wrangling & Plotting:** `tidyverse`, `dplyr`, `patchwork`, `lemon`, `ggeasy`, `ggdist`, `visdat`, `here`
-    *   **Statistical Analysis:** `Superpower` (for power analysis), `lme4`, `estimatr`, `performance`, `easystats`, `sjPlot`, `broom.mixed`, `mixedup`, `emmeans`
+    *   **Data Wrangling & Plotting:** `tidyverse`, `dplyr`, `patchwork`, `lemon`, `ggeasy`, `ggdist`, `visdat`, `here`, `svglite`
+    *   **Statistical Analysis:** `Superpower` (for power analysis), `lme4`, `glmmTMB`, `estimatr`, `performance`, `easystats`, `sjPlot`, `broom.mixed`, `mixedup`, `emmeans`
 *   **Recommended IDE:** RStudio, VSCode with R extensions, or Positron. The scripts use the `here` package for robust file path handling, so they work correctly regardless of where they are executed from within the project.
 
 ---
@@ -79,8 +79,8 @@ The project is organized into the following directories and files:
     ```R
     install.packages(c(
       "Superpower", "easystats", "tidyverse", "dplyr", "readr", "lemon",
-      "patchwork", "ggeasy", "lme4", "performance", "broom.mixed",
-      "sjPlot", "estimatr", "visdat", "ggdist", "mixedup", "emmeans", "here"
+      "patchwork", "ggeasy", "lme4", "glmmTMB", "performance", "broom.mixed",
+      "sjPlot", "estimatr", "visdat", "ggdist", "mixedup", "emmeans", "here", "svglite"
     ))
     
     # mixedup may need to be installed from GitHub:
@@ -108,9 +108,11 @@ The project is organized into the following directories and files:
 
 *   **`dRPE mixed model.Rmd`**: Training load analysis that:
     *   Reads `data/rpe data.csv`
-    *   Fits a linear mixed model for dRPE ratings with Group × Mode interaction
-    *   Performs model diagnostics and variance decomposition
-    *   Conducts pairwise contrasts with Bonferroni correction
+    *   Fits an initial linear mixed model (lmer) for dRPE ratings with Group × Mode interaction
+    *   Performs model diagnostics revealing heterogeneous variance across training modes
+    *   Refits the model using glmmTMB with mode-specific variance structure (`dispformula = ~ Mode`)
+    *   Conducts variance decomposition and calculates mode-specific standard deviations
+    *   Performs pairwise contrasts with Bonferroni correction
     *   Saves intermediate results to `data/rpe_contrasts.rds` for figure generation
 
 *   **`figures.Rmd`**: Centralised manuscript figure generation that:

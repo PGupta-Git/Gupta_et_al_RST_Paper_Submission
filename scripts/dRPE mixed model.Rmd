@@ -18,6 +18,11 @@ library(emmeans)
 library(mixedup)
 library(broom.mixed)
 library(stats)
+library(sjPlot)
+library(lemon)
+library(ggeasy)
+library(glmmTMB)
+library(svglite)
 library(here)
 
 # set theme
@@ -98,7 +103,7 @@ rpe$Session <- as.numeric(rpe$Session)
 ```{r}
 #### get descriptives ----
 rpe |>
-  group_by(Mode, Group) |>
+  group_by(Mode) |>
   summarise(
     mean = round(mean(Ratings, na.rm = TRUE), 3),
     sd = round(sd(Ratings, na.rm = TRUE), 3),
@@ -117,26 +122,50 @@ summary(
     data = rpe
   )
 )
+tab_model(mixed.rpe)
 
 # variance decomposition
 summarise_model(mixed.rpe)
 
 # model diagnostics
-# check residuals/errors
-check_model(mixed.rpe)
+# histogram
+fitted.mixed.rpe <- augment(mixed.rpe)
+ggplot(fitted.mixed.rpe, aes(x = .resid)) +
+  geom_histogram(binwidth = 1, color = "white") # fineish..
 
 # relationship between fitted values and residuals ----
-fitted.mixed.rpe <- augment(mixed.rpe)
 ggplot(fitted.mixed.rpe, aes(x = .fitted, y = .resid)) +
   geom_point(aes(color = Group)) +
-  geom_smooth(method = "lm") # generally OK and no clustering
+  geom_smooth(method = "lm") # funneling - not good
 
-# histogram
-ggplot(fitted.mixed.rpe, aes(x = .resid)) +
-  geom_histogram(binwidth = 1, color = "white") # again, fine
+# rerun model in glmmTMB to allows variance to differ by Mode
+# model non-constant variance while preserving crossed random effects
+# • variances are returned on the log scale •
+summary(mixed.rpe.glmm <- glmmTMB(Ratings ~ Group * Mode + Measure + 
+                            (1|ID) + (1|Session), data = rpe,
+                          dispformula = ~ Mode)) # allows variance to differ by Mode
+tab_model(mixed.rpe.glmm)
+summarise_model(mixed.rpe.glmm) 
+# the residual variance is a model parameter (model predicts residual variance)
+# no detectable between-player variance.
+# players do not have systemtically different intercepts after accounting for Mode
+# sessions differed as players tend to report higher or lower RPEs in certain sessions
+# residual variance differs by Mode (see below)
+# so, variance structure explained by session and mode specific variability.
+
+# check residuals - funeling now gone due to model respecification
+plot(predict(mixed.rpe.glmm),
+     resid(mixed.rpe.glmm, type = "pearson"))
+# successfully modelling of the non-constant variance observed by Mode
+
+# get mode SD's
+(disp_est <- summary(mixed.rpe.glmm)$coefficients$disp[, "Estimate"]) # extract
+# match and gym lower than RST, soccer training higher
+(log_var <- disp_est[1] + c(0, disp_est[-1])) # get variance, compare to intercept
+(sd_mode <- sqrt(exp(log_var))) # convert to SD's
 
 # get estimated marginal means and pairwise contrasts
-(est <- emmeans(mixed.rpe, ~ Group | Mode))
+(est <- emmeans(mixed.rpe.glmm, ~ Group | Mode))
 (pairs <- summary(contrast(est, "pairwise"), infer = TRUE))
 
 # manual bonferroni CI adjustment for these 4 comparisons
@@ -145,7 +174,7 @@ ggplot(fitted.mixed.rpe, aes(x = .resid)) +
 (alpha <- 0.05) # set alpha
 (crit <- qt(1 - alpha / (2 * m), df)) # get critical t per row
 
-(manual_bonf <- pairs |>
+(model.bonf <- pairs |>
   mutate(
     lower.CL.bonf = estimate - crit * SE,
     upper.CL.bonf = estimate + crit * SE,
@@ -167,5 +196,5 @@ ggplot(fitted.mixed.rpe, aes(x = .resid)) +
   ))
 
 # save results for plotting in figures.Rmd
-saveRDS(manual_bonf, here("data", "rpe_contrasts.rds"))
+saveRDS(model.bonf, here("data", "rpe_contrasts.rds"))
 ```

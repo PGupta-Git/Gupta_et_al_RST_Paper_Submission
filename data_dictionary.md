@@ -148,7 +148,7 @@ This R data file contains intermediate results from the power analysis in `sesoi
 
 ## File: `rpe_contrasts.rds`
 
-This R data file contains between-group contrast results from the dRPE mixed model analysis in `dRPE mixed model.Rmd`, used by `figures.Rmd` to generate Figure 4 (RPE forest plot).
+This R data file contains between-group contrast results from the dRPE mixed model analysis in `dRPE mixed model.Rmd`, used by `figures.Rmd` to generate Figure 4 (RPE forest plot). The contrasts are derived from a glmmTMB model that accounts for heterogeneous variance across training modes.
 
 **Structure:** A data frame with the following columns:
 
@@ -172,7 +172,7 @@ The `/scripts` directory contains R Markdown analysis files that replace the leg
 | Script Name | Purpose | Input Data | Output |
 |-------------|---------|------------|--------|
 | `sesoi.Rmd` | SESOI calculation and a priori power analysis | `journal.pone.0299204.s001.csv`, `Sprinttest_Olympiatoppen.csv` | `sensitivity_analysis.rds` |
-| `dRPE mixed model.Rmd` | Training load analysis using mixed models for dRPE | `rpe data.csv` | `rpe_contrasts.rds`, model diagnostics |
+| `dRPE mixed model.Rmd` | Training load analysis using mixed models (lmer and glmmTMB) for dRPE with heterogeneous variance modeling | `rpe data.csv` | `rpe_contrasts.rds`, model diagnostics |
 | `figures.Rmd` | Centralised manuscript figure generation | `sensitivity_analysis.rds`, `rpe data.csv`, `rpe_contrasts.rds`, `ANCOVA Final Long.csv` | `figures/figure 2.svg`, `figure 3.svg`, `figure 4.svg`, `figure 5.svg` |
 | `ancovas.Rmd` | ANCOVA models and diagnostics for fitness outcomes | `ANCOVA Final.csv` | Model results and diagnostics |
 
