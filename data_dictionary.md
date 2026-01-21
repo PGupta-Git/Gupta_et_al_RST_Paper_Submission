@@ -53,9 +53,9 @@ This file contains the training load data, collected as differential ratings of 
 
 ### Data Columns
 
-The remaining columns follow a structured naming convention: `S<Session>_<Mode>_<Measure>`.
+The remaining columns follow a structured naming convention: `<Session>_<Mode>_<Measure>`.
 
-*   **`S<Session>`**: The session number.
+*   **`<Session>`**: The session number.
     *   **Data Type:** Numeric (Integer)
     *   **Valid Range:** 1 to 12.
 *   **`<Mode>`**: The type of training session.
