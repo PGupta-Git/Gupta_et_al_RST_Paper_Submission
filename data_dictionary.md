@@ -76,67 +76,22 @@ The values within these columns represent the dRPE rating.
 
 ---
 
-## File: `journal.pone.0299204.s001.csv`
-
-This file contains supplementary data from Lee et al. (2024) used to validate the SESOI calculation approach. It includes sprint performance data from an intervention study.
-
-**Source:** Lee et al. (2024). [DOI: 10.1371/journal.pone.0299204](https://doi.org/10.1371/journal.pone.0299204)
-
-| Variable Name | Data Type   | Measurement Units | Description                                                                    |
-|---------------|-------------|-------------------|--------------------------------------------------------------------------------|
-| `NO`          | Numeric     | N/A               | Participant number/identifier.                                                 |
-| `Group`       | Categorical | N/A               | Intervention group assignment (1 = intervention, 2 = control).                 |
-| `5sp_Pre`     | Numeric     | Seconds (s)       | 5m sprint time at pre-test.                                                    |
-| `5sp_Post`    | Numeric     | Seconds (s)       | 5m sprint time at post-test.                                                   |
-| `10sp_Pre`    | Numeric     | Seconds (s)       | 10m sprint time at pre-test.                                                   |
-| `10sp_Post`   | Numeric     | Seconds (s)       | 10m sprint time at post-test.                                                  |
-| `20sp_Pre`    | Numeric     | Seconds (s)       | 20m sprint time at pre-test.                                                   |
-| `20sp_Post`   | Numeric     | Seconds (s)       | 20m sprint time at post-test.                                                  |
-| `30sp_Pre`    | Numeric     | Seconds (s)       | 30m sprint time at pre-test.                                                   |
-| `30sp_Post`   | Numeric     | Seconds (s)       | 30m sprint time at post-test.                                                  |
-
----
-
-## File: `Sprinttest_Olympiatoppen.csv`
-
-This file contains sprint test data from elite Norwegian athletes, used to assess linearity across sprint distances. Originally from Haugen et al. (2019).
-
-**Source:** Haugen et al. (2019). [DOI: 10.18710/PJONBM](https://doi.org/10.18710/PJONBM)
-
-| Variable Name   | Data Type   | Measurement Units | Description                                                                    |
-|-----------------|-------------|-------------------|--------------------------------------------------------------------------------|
-| `ID`            | Numeric     | N/A               | Unique identifier for each athlete.                                            |
-| `Sport`         | Categorical | N/A               | The sport of the athlete.                                                      |
-| `Sex`           | Categorical | N/A               | Sex of the athlete (M/F).                                                      |
-| `10 m`          | Numeric     | Seconds (s)       | 10m sprint time.                                                               |
-| `20 m`          | Numeric     | Seconds (s)       | 20m sprint time.                                                               |
-| `30 m`          | Numeric     | Seconds (s)       | 30m sprint time.                                                               |
-| `40 m`          | Numeric     | Seconds (s)       | 40m sprint time.                                                               |
-
-**Note:** This dataset may contain additional columns not listed here. The variables above are the primary ones used in the analysis.
-
 ---
 
 ## File: `sensitivity_analysis.rds`
 
-This R data file contains intermediate results from the power analysis in `sesoi.Rmd`, used by `figures.Rmd` to generate Figure 2 (power analysis sensitivity curves).
+This R data file contains intermediate results from the sensitivity power analysis in `sensitivity.Rmd`, used by `figures.Rmd` to generate Figure 2 (power analysis sensitivity curves).
 
 **Structure:** A named list containing the following elements:
 
 | Element Name | Data Type | Description |
 |--------------|-----------|-------------|
-| `sensitivity.10m` | Data frame | Sensitivity analysis results for 10m sprint (columns: scenario, baseline, target, power) |
-| `sensitivity.20m` | Data frame | Sensitivity analysis results for 20m sprint |
-| `sensitivity.40m` | Data frame | Sensitivity analysis results for 40m sprint |
-| `sensitivity.vmax` | Data frame | Sensitivity analysis results for VMax |
-| `sensitivity.cmj` | Data frame | Sensitivity analysis results for CMJ |
-| `sensitivity.mas` | Data frame | Sensitivity analysis results for MAS |
-| `sesoi.10` | Numeric | SESOI value for 10m sprint (seconds) |
-| `sesoi.20` | Numeric | SESOI value for 20m sprint (seconds) |
-| `sesoi.40` | Numeric | SESOI value for 40m sprint (seconds) |
-| `sesoi.vmax` | Numeric | SESOI value for VMax (m·s⁻¹) |
-| `sesoi.cmj` | Numeric | SESOI value for CMJ (cm) |
-| `sesoi.mas` | Numeric | SESOI value for MAS (m·s⁻¹) |
+| `sen.10m` | Data frame | Sensitivity analysis results for 10m sprint (columns: scenario, Group1.10, Group2.10, Power) |
+| `sen.20m` | Data frame | Sensitivity analysis results for 20m sprint (columns: scenario, Group1.20, Group2.20, Power) |
+| `sen.40m` | Data frame | Sensitivity analysis results for 40m sprint (columns: scenario, Group1.40, Group2.40, Power) |
+| `sen.vmax` | Data frame | Sensitivity analysis results for VMax (columns: scenario, Group1.vmax, Group2.vmax, Power) |
+| `sen.cmj` | Data frame | Sensitivity analysis results for CMJ (columns: scenario, Group1.cmj, Group2.cmj, Power) |
+| `sen.mas` | Data frame | Sensitivity analysis results for MAS (columns: scenario, Group1.mas, Group2.mas, Power) |
 | `critical.10` | Numeric | Critical effect size at 80% power for 10m sprint |
 | `critical.20` | Numeric | Critical effect size at 80% power for 20m sprint |
 | `critical.40` | Numeric | Critical effect size at 80% power for 40m sprint |
@@ -171,7 +126,7 @@ The `/scripts` directory contains R Markdown analysis files that replace the leg
 
 | Script Name | Purpose | Input Data | Output |
 |-------------|---------|------------|--------|
-| `sesoi.Rmd` | SESOI calculation and a priori power analysis | `journal.pone.0299204.s001.csv`, `Sprinttest_Olympiatoppen.csv` | `sensitivity_analysis.rds` |
+| `sensitivity.Rmd` | Sensitivity power analysis for detectable effect sizes | Study design parameters | `sensitivity_analysis.rds` |
 | `dRPE mixed model.Rmd` | Training load analysis using mixed models (lmer and glmmTMB) for dRPE with heterogeneous variance modeling | `rpe data.csv` | `rpe_contrasts.rds`, model diagnostics |
 | `figures.Rmd` | Centralised manuscript figure generation | `sensitivity_analysis.rds`, `rpe data.csv`, `rpe_contrasts.rds`, `ANCOVA Final Long.csv` | `figures/figure 2.svg`, `figure 3.svg`, `figure 4.svg`, `figure 5.svg` |
 | `ancovas.Rmd` | ANCOVA models and diagnostics for fitness outcomes | `ANCOVA Final.csv` | Model results and diagnostics |
@@ -179,7 +134,7 @@ The `/scripts` directory contains R Markdown analysis files that replace the leg
 **Note:** All scripts use the `here` package for file path handling. Figures are output as SVG by default; change the file extension to `.png` in the `ggsave()` calls for PNG output.
 
 **Execution Order:** To reproduce all results, run scripts in this order:
-1. `sesoi.Rmd` (generates intermediate data for Figure 2)
+1. `sensitivity.Rmd` (generates intermediate data for Figure 2)
 2. `dRPE mixed model.Rmd` (generates intermediate data for Figure 4)
 3. `figures.Rmd` (generates all manuscript figures 2-5)
 4. `ancovas.Rmd` (ANCOVA analysis)

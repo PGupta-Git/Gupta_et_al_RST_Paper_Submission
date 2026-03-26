@@ -24,15 +24,15 @@ theme_set(theme_classic(base_size = 18, base_family = "sans"))
 
 ### Power analysis sensitivity curves (Figure 2)
 
-Load intermediate results from `sesoi.Rmd` and create the combined sensitivity plot.
+Load intermediate results from `sensitivity.Rmd` and create the combined sensitivity plot.
 
 ```{r}
 # load sensitivity analysis data
 sens <- readRDS(here("data", "sensitivity_analysis.rds"))
 
 # 10 m sprint sensitivity curve
-ten <- sens$sensitivity.10m |>
-  ggplot(aes(target, power)) +
+ten <- sens$sen.10m |>
+  ggplot(aes(Group2.10, Power)) +
   annotate(
     "segment",
     x = -0.2,
@@ -53,16 +53,6 @@ ten <- sens$sensitivity.10m |>
     size = 1.5,
     lineend = "round"
   ) +
-  annotate(
-    "segment",
-    x = -0.11,
-    xend = -0.11,
-    y = 0,
-    yend = 30.8,
-    colour = "green",
-    size = 1.5,
-    lineend = "round"
-  ) +
   geom_line(linewidth = 2, lineend = "round") +
   coord_capped_cart(bottom = 'both', left = 'both') +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 10)) +
@@ -73,8 +63,8 @@ ten <- sens$sensitivity.10m |>
   theme(panel.border = element_blank(), axis.line = element_line())
 
 # 20 m sprint sensitivity curve
-twenty <- sens$sensitivity.20m |>
-  ggplot(aes(target, power)) +
+twenty <- sens$sen.20m |>
+  ggplot(aes(Group2.20, Power)) +
   annotate(
     "segment",
     x = -0.3,
@@ -95,16 +85,6 @@ twenty <- sens$sensitivity.20m |>
     size = 1.5,
     lineend = "round"
   ) +
-  annotate(
-    "segment",
-    x = -0.16,
-    xend = -0.16,
-    y = 0,
-    yend = 33.8,
-    colour = "green",
-    size = 1.5,
-    lineend = "round"
-  ) +
   geom_line(linewidth = 2, lineend = "round") +
   coord_capped_cart(bottom = 'both', left = 'both') +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 10)) +
@@ -114,8 +94,8 @@ twenty <- sens$sensitivity.20m |>
   theme(axis.title.x = element_text(vjust = -2))
 
 # 40 m sprint sensitivity curve
-forty <- sens$sensitivity.40m |>
-  ggplot(aes(target, power)) +
+forty <- sens$sen.40m |>
+  ggplot(aes(Group2.40, Power)) +
   annotate(
     "segment",
     x = -0.40,
@@ -136,16 +116,6 @@ forty <- sens$sensitivity.40m |>
     size = 1.5,
     lineend = "round"
   ) +
-  annotate(
-    "segment",
-    x = -0.26,
-    xend = -0.26,
-    y = 0,
-    yend = 70.3,
-    colour = "green",
-    size = 1.5,
-    lineend = "round"
-  ) +
   geom_line(linewidth = 2, lineend = "round") +
   coord_capped_cart(bottom = 'both', left = 'both') +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 10)) +
@@ -155,8 +125,8 @@ forty <- sens$sensitivity.40m |>
   theme(axis.title.x = element_text(vjust = -3))
 
 # CMJ sensitivity curve
-cmj <- sens$sensitivity.cmj |>
-  ggplot(aes(target, power)) +
+cmj <- sens$sen.cmj |>
+  ggplot(aes(Group2.cmj, Power)) +
   annotate(
     "segment",
     x = 0,
@@ -177,16 +147,6 @@ cmj <- sens$sensitivity.cmj |>
     size = 1.5,
     lineend = "round"
   ) +
-  annotate(
-    "segment",
-    x = 2.8,
-    xend = 2.8,
-    y = 0,
-    yend = 2.8,
-    colour = "green",
-    size = 1.5,
-    lineend = "round"
-  ) +
   geom_line(linewidth = 2, lineend = "round") +
   coord_capped_cart(bottom = 'both', left = 'both') +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 10)) +
@@ -196,8 +156,8 @@ cmj <- sens$sensitivity.cmj |>
   theme(axis.title.x = element_text(vjust = -3))
 
 # VMax sensitivity curve
-vmax <- sens$sensitivity.vmax |>
-  ggplot(aes(target, power)) +
+vmax <- sens$sen.vmax |>
+  ggplot(aes(Group2.vmax, Power)) +
   annotate(
     "segment",
     x = 0.2,
@@ -218,16 +178,6 @@ vmax <- sens$sensitivity.vmax |>
     size = 1.5,
     lineend = "round"
   ) +
-  annotate(
-    "segment",
-    x = 0.46,
-    xend = 0.46,
-    y = 0,
-    yend = 40,
-    colour = "green",
-    size = 1.5,
-    lineend = "round"
-  ) +
   geom_line(linewidth = 2, lineend = "round") +
   coord_capped_cart(bottom = 'both', left = 'both') +
   scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, 10)) +
@@ -245,8 +195,8 @@ vmax <- sens$sensitivity.vmax |>
   theme(axis.title.x = element_text(vjust = -2))
 
 # MAS sensitivity curve
-mas <- sens$sensitivity.mas |>
-  ggplot(aes(target, power)) +
+mas <- sens$sen.mas |>
+  ggplot(aes(Group2.mas, Power)) +
   annotate(
     "segment",
     x = 0.05,
@@ -264,16 +214,6 @@ mas <- sens$sensitivity.mas |>
     y = 0,
     yend = 80,
     colour = "red",
-    size = 1.5,
-    lineend = "round"
-  ) +
-  annotate(
-    "segment",
-    x = 0.13,
-    xend = 0.13,
-    y = 0,
-    yend = 5.2,
-    colour = "green",
     size = 1.5,
     lineend = "round"
   ) +
