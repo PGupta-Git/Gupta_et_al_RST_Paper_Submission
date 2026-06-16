@@ -1,4 +1,6 @@
-# A Pragmatic, Parallel-Arm, Randomised Trial on the Effects of Two Repeated Sprint Training Protocols on Fitness Outcomes in Semi-Professional Male Soccer Players: Preliminary Report
+# A pragmatic, parallel-arm, randomised trial on the effects of two repeated-sprint training protocols on fitness outcomes in semi-professional male soccer players: preliminary report
+
+[![DOI](https://img.shields.io/badge/DOI-10.1080%2F24733938.2026.2684071-blue)](https://doi.org/10.1080/24733938.2026.2684071)
 
 **Authors:**
 Palash Gupta<sup>1</sup>, Anthony P. Turner<sup>1</sup>, Shaun M. Phillips<sup>1</sup>, Matthew Weston<sup>1,2*</sup>
@@ -15,6 +17,12 @@ ORCID:
 * AT: https://orcid.org/0000-0003-1202-6649
 * SP: https://orcid.org/0000-0002-7947-3403
 * MW: https://orcid.org/0000-0002-9531-3004 
+
+## Citation
+
+If you use the data, analysis scripts, or findings from this study in your research, please cite the published article:
+
+> Gupta, P., Turner, A. P., Phillips, S. M., & Weston, M. (2026). A pragmatic, parallel-arm, randomised trial on the effects of two repeated-sprint training protocols on fitness outcomes in semi-professional male soccer players: preliminary report. *Science and Medicine in Football*. https://doi.org/10.1080/24733938.2026.2684071
 
 ## Project Description
 
