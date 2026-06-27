@@ -1,140 +1,171 @@
 # Data Dictionary
 
-This document provides a detailed description of the variables contained in the CSV files within the `/data` directory.
+This document describes the variables in the CSV and RDS files in `/data`.
 
-**Missing Data:** Across all files, missing values are represented by empty cells, which are interpreted as `NA` by R when using `read_csv`.
-
----
+Missing values are represented by empty cells. The analysis scripts interpret
+these cells as `NA` when importing data with `read_csv`.
 
 ## File: `ANCOVA Final.csv`
 
-This file contains the primary fitness test results for each participant in a wide format. Each row represents a unique combination of a participant and a specific test.
+Primary fitness test results in wide format. Each row is one participant-test
+combination.
 
-| Variable Name | Data Type   | Measurement Units | Description                                                                                                                                                            |
-|---------------|-------------|-------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `ID`          | Categorical | N/A               | A unique, anonymized identifier for each participant.                                                                                                                  |
-| `Group`       | Categorical | N/A               | The assigned training group. Valid values: `10-sec` (Group 1), `20-sec` (Group 2).                                                                                     |
-| `Test`        | Categorical | N/A               | The physical performance test conducted. Valid values: `Time_10m`, `Time_20m`, `Time_40m` (Sprint Times), `Max_Velocity` (Maximal Sprinting Speed), `CMJH` (Countermovement Jump Height), `MAS` (Maximal Aerobic Speed). |
-| `Pre`         | Numeric     | Varies by `Test`  | The performance score on the test before the intervention period. See units below.                                                                                     |
-| `Post`        | Numeric     | Varies by `Test`  | The performance score on the test after the intervention period. See units below.                                                                                      |
+Variables:
 
-**Measurement Units for `Pre` and `Post` variables based on `Test`:**
-*   `Time_10m`, `Time_20m`, `Time_40m`: Seconds (s)
-*   `Max_Velocity`: Meters per second (m·s⁻¹)
-*   `CMJH`: Centimeters (cm)
-*   `MAS`: Meters per second (m·s⁻¹)
+- `ID`
+  - Type: categorical.
+  - Units: not applicable.
+  - Description: anonymized participant identifier.
+- `Group`
+  - Type: categorical.
+  - Units: not applicable.
+  - Valid values: `10-sec` for Group 1 and `20-sec` for Group 2.
+- `Test`
+  - Type: categorical.
+  - Valid values: `Time_10m`, `Time_20m`, `Time_40m`, `Max_Velocity`,
+    `CMJH`, and `MAS`.
+- `Pre`
+  - Type: numeric.
+  - Units: vary by `Test`.
+  - Description: pre-intervention performance score.
+- `Post`
+  - Type: numeric.
+  - Units: vary by `Test`.
+  - Description: post-intervention performance score.
 
----
+Measurement units for `Pre` and `Post`:
+
+- `Time_10m`, `Time_20m`, and `Time_40m`: seconds.
+- `Max_Velocity`: metres per second.
+- `CMJH`: centimetres.
+- `MAS`: metres per second.
 
 ## File: `ANCOVA Final Long.csv`
 
-This file contains the same data as `ANCOVA Final.csv` but is structured in a long format, primarily for use in plotting with `ggplot2`.
+The same fitness data as `ANCOVA Final.csv`, structured in long format for
+plotting with `ggplot2`.
 
-| Variable Name | Data Type   | Measurement Units | Description                                                                                                                                                            |
-|---------------|-------------|-------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `ID`          | Categorical | N/A               | A unique, anonymized identifier for each participant.                                                                                                                  |
-| `Group`       | Categorical | N/A               | The assigned training group. Valid values: `10-sec`, `20-sec`.                                                                                                         |
-| `Timeline`    | Categorical | N/A               | The time point of the measurement. Valid values: `Pre`, `Post`.                                                                                                        |
-| `Test`        | Categorical | N/A               | The physical performance test conducted. See `ANCOVA Final.csv` for a list of valid values.                                                                            |
-| `Value`       | Numeric     | Varies by `Test`  | The performance score for the given `Test` at the specified `Timeline`. See `ANCOVA Final.csv` for measurement units.                                                  |
+Variables:
 
----
+- `ID`: anonymized participant identifier.
+- `Group`: assigned training group; valid values are `10-sec` and `20-sec`.
+- `Timeline`: measurement time point; valid values are `Pre` and `Post`.
+- `Test`: physical performance test.
+- `Value`: score for the given `Test` and `Timeline`.
+
+Units for `Value` match the units listed for `ANCOVA Final.csv`.
 
 ## File: `rpe data.csv`
 
-This file contains the training load data, collected as differential ratings of perceived exertion (dRPE). The data is in a very wide format, with each row representing one participant and columns representing dRPE ratings for specific sessions, training modes, and measures.
+Training-load data collected as differential ratings of perceived exertion.
+The file is in wide format: rows are participants and columns are session,
+training-mode, and measure combinations.
 
-### Identifier Columns
+Identifier columns:
 
-| Variable Name | Data Type   | Measurement Units | Description                                                                    |
-|---------------|-------------|-------------------|--------------------------------------------------------------------------------|
-| `ID`          | Categorical | N/A               | A unique, anonymized identifier for each participant.                          |
-| `Group`       | Categorical | N/A               | The assigned training group. Valid values: `10-sec`, `20-sec`.                 |
+- `ID`: anonymized participant identifier.
+- `Group`: assigned training group; valid values are `10-sec` and `20-sec`.
 
-### Data Columns
+Data columns follow this pattern:
 
-The remaining columns follow a structured naming convention: `<Session>_<Mode>_<Measure>`.
+```text
+<Session>_<Mode>_<Measure>
+```
 
-*   **`<Session>`**: The session number.
-    *   **Data Type:** Numeric (Integer)
-    *   **Valid Range:** 1 to 12.
-*   **`<Mode>`**: The type of training session.
-    *   **Data Type:** Categorical
-    *   **Valid Values:** `Gym` (Gym-Based Training), `RST` (Repeated-Sprint Training), `FT` (Soccer Training), `Match` (Competitive Match).
-*   **`<Measure>`**: The type of dRPE rating.
-    *   **Data Type:** Categorical
-    *   **Valid Values:** `L` (Legs dRPE), `B` (Breathlessness dRPE).
+Pattern fields:
 
-**Example:** The column `S1_Gym_L` contains the dRPE rating for the legs from the first gym session.
+- `<Session>`: integer session number from 1 to 12.
+- `<Mode>`: `Gym`, `RST`, `FT`, or `Match`.
+- `<Measure>`: `L` for legs or `B` for breathlessness.
 
-The values within these columns represent the dRPE rating.
-*   **Data Type:** Numeric (Integer)
-*   **Measurement Units:** Arbitrary Units (AU)
-*   **Valid Range:** 0-100 (based on the CR100 scale).
+Example: `S1_Gym_L` is the legs dRPE rating from the first gym session.
 
-**Note:** The `dRPE mixed model.Rmd` script transforms this wide-format data into a long format with the columns `ID`, `Group`, `Session`, `Mode`, `Measure`, and `Ratings` for analysis.
+Values are integer arbitrary units on the CR100 scale, with a valid range of
+0 to 100.
 
----
-
----
+The `dRPE mixed model.Rmd` script reshapes this file into long format with
+`ID`, `Group`, `Session`, `Mode`, `Measure`, and `Ratings` columns.
 
 ## File: `sensitivity_analysis.rds`
 
-This R data file contains intermediate results from the sensitivity power analysis in `sensitivity.Rmd`, used by `figures.Rmd` to generate Figure 2 (power analysis sensitivity curves).
+Intermediate results from `sensitivity.Rmd`, used by `figures.Rmd` to generate
+Figure 2.
 
-**Structure:** A named list containing the following elements:
+The object is a named list with these elements:
 
-| Element Name | Data Type | Description |
-|--------------|-----------|-------------|
-| `sen.10m` | Data frame | Sensitivity analysis results for 10m sprint (columns: scenario, Group1.10, Group2.10, Power) |
-| `sen.20m` | Data frame | Sensitivity analysis results for 20m sprint (columns: scenario, Group1.20, Group2.20, Power) |
-| `sen.40m` | Data frame | Sensitivity analysis results for 40m sprint (columns: scenario, Group1.40, Group2.40, Power) |
-| `sen.vmax` | Data frame | Sensitivity analysis results for VMax (columns: scenario, Group1.vmax, Group2.vmax, Power) |
-| `sen.cmj` | Data frame | Sensitivity analysis results for CMJ (columns: scenario, Group1.cmj, Group2.cmj, Power) |
-| `sen.mas` | Data frame | Sensitivity analysis results for MAS (columns: scenario, Group1.mas, Group2.mas, Power) |
-| `critical.10` | Numeric | Critical effect size at 80% power for 10m sprint |
-| `critical.20` | Numeric | Critical effect size at 80% power for 20m sprint |
-| `critical.40` | Numeric | Critical effect size at 80% power for 40m sprint |
-| `critical.vmax` | Numeric | Critical effect size at 80% power for VMax |
-| `critical.cmj` | Numeric | Critical effect size at 80% power for CMJ |
-| `critical.mas` | Numeric | Critical effect size at 80% power for MAS |
+- `sen.10m`: sensitivity results for 10 m sprint.
+- `sen.20m`: sensitivity results for 20 m sprint.
+- `sen.40m`: sensitivity results for 40 m sprint.
+- `sen.vmax`: sensitivity results for maximal velocity.
+- `sen.cmj`: sensitivity results for countermovement jump height.
+- `sen.mas`: sensitivity results for maximal aerobic speed.
+- `critical.10`: critical effect size at 80% power for 10 m sprint.
+- `critical.20`: critical effect size at 80% power for 20 m sprint.
+- `critical.40`: critical effect size at 80% power for 40 m sprint.
+- `critical.vmax`: critical effect size at 80% power for maximal velocity.
+- `critical.cmj`: critical effect size at 80% power for jump height.
+- `critical.mas`: critical effect size at 80% power for aerobic speed.
 
----
+Each `sen.*` data frame contains a scenario column, two group columns, and a
+`Power` column.
 
 ## File: `rpe_contrasts.rds`
 
-This R data file contains between-group contrast results from the dRPE mixed model analysis in `dRPE mixed model.Rmd`, used by `figures.Rmd` to generate Figure 4 (RPE forest plot). The contrasts are derived from a glmmTMB model that accounts for heterogeneous variance across training modes.
+Between-group contrast results from `dRPE mixed model.Rmd`, used by
+`figures.Rmd` to generate Figure 4.
 
-**Structure:** A data frame with the following columns:
+The contrasts are derived from a `glmmTMB` model that accounts for
+heterogeneous variance across training modes.
 
-| Variable Name | Data Type | Description |
-|---------------|-----------|-------------|
-| `Mode` | Factor | Training mode (Repeated-Sprint Training, Match, Soccer Training, Gym-Based Training) |
-| `contrast` | Character | The pairwise contrast (Group One - Group Two) |
-| `estimate` | Numeric | Estimated difference between groups in RPE (AU) |
-| `SE` | Numeric | Standard error of the estimate |
-| `df` | Numeric | Degrees of freedom |
-| `lower.CL.bonf` | Numeric | Lower 95% Bonferroni-adjusted confidence limit |
-| `upper.CL.bonf` | Numeric | Upper 95% Bonferroni-adjusted confidence limit |
-| `p.value.bonf` | Numeric | Bonferroni-adjusted p-value |
+Variables:
 
----
+- `Mode`: training mode.
+- `contrast`: pairwise contrast, expressed as Group One minus Group Two.
+- `estimate`: estimated between-group RPE difference in arbitrary units.
+- `SE`: standard error of the estimate.
+- `df`: degrees of freedom.
+- `lower.CL.bonf`: lower Bonferroni-adjusted confidence limit.
+- `upper.CL.bonf`: upper Bonferroni-adjusted confidence limit.
+- `p.value.bonf`: Bonferroni-adjusted p-value.
 
 ## Scripts Overview
 
-The `/scripts` directory contains R Markdown analysis files that replace the legacy R scripts:
+The `/scripts` directory contains R Markdown analysis files.
 
-| Script Name | Purpose | Input Data | Output |
-|-------------|---------|------------|--------|
-| `sensitivity.Rmd` | Sensitivity power analysis for detectable effect sizes | Study design parameters | `sensitivity_analysis.rds` |
-| `dRPE mixed model.Rmd` | Training load analysis using mixed models (lmer and glmmTMB) for dRPE with heterogeneous variance modeling | `rpe data.csv` | `rpe_contrasts.rds`, model diagnostics |
-| `figures.Rmd` | Centralised manuscript figure generation | `sensitivity_analysis.rds`, `rpe data.csv`, `rpe_contrasts.rds`, `ANCOVA Final Long.csv` | `figures/figure 2.svg`, `figure 3.svg`, `figure 4.svg`, `figure 5.svg` |
-| `ancovas.Rmd` | ANCOVA models and diagnostics for fitness outcomes | `ANCOVA Final.csv` | Model results and diagnostics |
+- `sensitivity.Rmd`
+  - Purpose: sensitivity power analysis.
+  - Input: study design parameters.
+  - Output: `data/sensitivity_analysis.rds`.
+- `dRPE mixed model.Rmd`
+  - Purpose: mixed-model analysis for dRPE ratings.
+  - Input: `data/rpe data.csv`.
+  - Output: `data/rpe_contrasts.rds` and model diagnostics.
+- `figures.Rmd`
+  - Purpose: manuscript figure generation.
+  - Inputs: intermediate RDS files, RPE data, and long-format ANCOVA data.
+  - Output: `figures/figure 2.svg` through `figures/figure 5.svg`.
+- `ancovas.Rmd`
+  - Purpose: ANCOVA models and diagnostics for fitness outcomes.
+  - Input: `data/ANCOVA Final.csv`.
+  - Output: model results and diagnostics.
 
-**Note:** All scripts use the `here` package for file path handling. Figures are output as SVG by default; change the file extension to `.png` in the `ggsave()` calls for PNG output.
+All scripts use `here` for file path handling. Figures are output as SVG by
+default. Change the extension in `ggsave()` calls to `.png` for PNG output.
 
-**Execution Order:** To reproduce all results, run scripts in this order:
-1. `sensitivity.Rmd` (generates intermediate data for Figure 2)
-2. `dRPE mixed model.Rmd` (generates intermediate data for Figure 4)
-3. `figures.Rmd` (generates all manuscript figures 2-5)
-4. `ancovas.Rmd` (ANCOVA analysis)
+## Reproducible Package Environment
+
+Restore the R package environment with `renv::restore()` before rendering the
+analysis files. The lockfile records package versions and sources, including
+the GitHub source for `mixedup`.
+
+`renv-dependencies.R` declares runtime package dependencies for `renv` only.
+It is not an analysis script.
+
+## Execution Order
+
+Run the scripts in this order:
+
+1. `sensitivity.Rmd`, which generates intermediate data for Figure 2.
+2. `dRPE mixed model.Rmd`, which generates intermediate data for Figure 4.
+3. `figures.Rmd`, which generates manuscript figures 2 through 5.
+4. `ancovas.Rmd`, which runs the ANCOVA analysis.
