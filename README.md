@@ -38,10 +38,13 @@ The repository includes:
 
 ## Software and Platform
 
-*   **Language:** R (version 4.0 or later recommended)
+*   **Language:** R (use the R version recorded in `renv.lock`; `renv` does not install R itself)
+*   **Package Environment:** `renv.lock` is the authoritative record of the R package versions and package sources used for this project.
 *   **Primary R Packages:**
-    *   **Data Wrangling & Plotting:** `tidyverse`, `dplyr`, `patchwork`, `lemon`, `ggeasy`, `ggdist`, `visdat`, `here`, `svglite`
-    *   **Statistical Analysis:** `Superpower` (for power analysis), `lme4`, `glmmTMB`, `estimatr`, `performance`, `easystats`, `sjPlot`, `broom.mixed`, `mixedup`, `emmeans`
+    *   **Rendering:** `rmarkdown`, `knitr`
+    *   **Data Import, Wrangling & Plotting:** `readr`, `readxl`, `tidyverse`, `dplyr`, `patchwork`, `lemon`, `ggeasy`, `ggdist`, `ggtext`, `visdat`, `here`, `svglite`
+    *   **Statistical Analysis:** `Superpower` (for power analysis), `lme4`, `glmmTMB`, `estimatr`, `performance`, `easystats`, `sjPlot`, `broom`, `broom.mixed`, `mixedup`, `emmeans`
+*   **GitHub Package:** `mixedup` is installed from GitHub (`m-clark/mixedup`) through the lockfile during `renv::restore()`.
 *   **Recommended IDE:** RStudio, VSCode with R extensions, or Positron. The scripts use the `here` package for robust file path handling, so they work correctly regardless of where they are executed from within the project.
 
 ---
@@ -80,18 +83,14 @@ The project is organized into the following directories and files:
 
 2.  **Open the Project:** Open the project in your IDE (e.g., RStudio by opening the folder, or by opening the folder in VSCode/Positron). The scripts use the `here` package to automatically detect the project root.
 
-3.  **Install Required Packages:** Run the following command in your R console to install all necessary packages:
+3.  **Restore Required Packages:** Run the following commands in your R console to install `renv` and restore the package environment recorded in `renv.lock`:
 
-    ```R
-    install.packages(c(
-      "Superpower", "easystats", "tidyverse", "dplyr", "readr", "lemon",
-      "patchwork", "ggeasy", "lme4", "glmmTMB", "performance", "broom.mixed",
-      "sjPlot", "estimatr", "visdat", "ggdist", "mixedup", "emmeans", "here", "svglite"
-    ))
-    
-    # mixedup may need to be installed from GitHub:
-    # remotes::install_github("m-clark/mixedup")
+    ```r
+    install.packages("renv", repos = "https://cloud.r-project.org")
+    renv::restore()
     ```
+
+    The lockfile records the package versions and sources used for this project, including the GitHub source for mixedup; it does not install R itself, Pandoc, or operating-system libraries.
 
 4.  **Run the R Markdown Scripts:** Execute the R Markdown files in the `/scripts` directory. You can render them using `rmarkdown::render()` or knit them directly in RStudio. A logical order is:
 
